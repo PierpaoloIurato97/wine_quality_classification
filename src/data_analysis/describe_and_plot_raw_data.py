@@ -15,7 +15,7 @@ def describe_and_plot_raw_data(df: pd.DataFrame):
         xlabel='Quality',
         ylabel='Frequency',
         file_name='wine_quality_distribution',
-        plot=lambda: plt.hist(df['quality'], bins=10, edgecolor='black')
+        plot=lambda: plt.hist(df['quality'], bins=5, edgecolor='black')
     )
 
 
