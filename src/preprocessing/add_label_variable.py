@@ -7,6 +7,7 @@ def add_label_variable(df: pd.DataFrame) -> None:
         raise ValueError("Column 'quality' not found in raw data.")
 
     df['label'] = (df['quality'] > 5).astype(int)
+    del df['quality']
 
 
 df = utils.read_csv('winequality-red')
