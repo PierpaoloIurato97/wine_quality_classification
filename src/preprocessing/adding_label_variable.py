@@ -12,4 +12,4 @@ def add_label_variable(df: pd.DataFrame) -> None:
 
 df = utils.read_csv('winequality-red')
 add_label_variable(df)
-utils.save_csv(df, 'winequality-red-processed')
+utils.save_csv(df, 'winequality-red-with-label')

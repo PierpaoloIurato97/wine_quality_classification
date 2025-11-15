@@ -1,5 +1,3 @@
-import os
-
 import matplotlib.pyplot as plt
 import pandas as pd
 import utils
@@ -16,13 +14,13 @@ def describe_and_plot_processed_data(df: pd.DataFrame):
     print(df['label'].value_counts())
 
     utils.make_plot(
-        title='Processed Wine Quality Distribution',
-        xlabel='Quality',
+        title='Processed Wine Label Distribution',
+        xlabel='Label',
         ylabel='Frequency',
-        file_name='processed_wine_quality_distribution',
+        file_name='wine_label_distribution',
         plot=lambda: plt.hist(df['label'], bins=2, edgecolor='black')
     )
 
 
-df = utils.read_csv('winequality-red-processed')
+df = utils.read_csv('winequality-red-with-label-standardized')
 describe_and_plot_processed_data(df)

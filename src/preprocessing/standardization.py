@@ -14,7 +14,6 @@ def standardize(df: pd.DataFrame):
     ) / df[COLUMNS_TO_STANDARDIZE].std()
 
 
-df = utils.read_csv('winequality-red-processed')
+df = utils.read_csv('winequality-red-with-label')
 standardize(df)
-utils.print_descriptive_statistics(df)
-utils.save_csv(df, 'winequality-red-processed-standardized')
+utils.save_csv(df, 'winequality-red-with-label-standardized')
