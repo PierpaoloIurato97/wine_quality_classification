@@ -3,10 +3,11 @@ build-backend = "setuptools.build_meta"
 requires = ["setuptools"]
 
 [project]
-authors = [{name = "Pierpaolo Iurato"}]
 dependencies = [
   "pandas==2.3.3",
+  "matplotlib==3.10.7"
 ]
+authors = [{name = "Pierpaolo Iurato"}]
 description = "Shared utilities for wine quality classification project"
 name = "utils"
 requires-python = ">=3.7"

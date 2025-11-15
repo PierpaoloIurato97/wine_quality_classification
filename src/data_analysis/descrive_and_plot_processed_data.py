@@ -15,18 +15,14 @@ def describe_and_plot_processed_data(df: pd.DataFrame):
     print("Class distribution in processed data:")
     print(df['label'].value_counts())
 
-    os.makedirs(utils.PLOTS_DIR, exist_ok=True)
-    plt.hist(df['label'], bins=2, edgecolor='black')
-    plt.title('Processed Wine Quality Distribution')
-    plt.xlabel('Quality')
-    plt.ylabel('Frequency')
-    plt.savefig(os.path.join(
-        utils.PLOTS_DIR, 'processed_wine_quality_distribution.png'))
-    plt.close()
+    utils.make_plot(
+        title='Processed Wine Quality Distribution',
+        xlabel='Quality',
+        ylabel='Frequency',
+        file_name='processed_wine_quality_distribution',
+        plot=lambda: plt.hist(df['label'], bins=2, edgecolor='black')
+    )
 
 
-utils.ensure_dir_exists(utils.DATA_DIR)
-
-df = utils.load_data(os.path.join(
-    utils.DATA_DIR, 'winequality-red-processed.csv'))
+df = utils.read_csv('winequality-red-processed')
 describe_and_plot_processed_data(df)

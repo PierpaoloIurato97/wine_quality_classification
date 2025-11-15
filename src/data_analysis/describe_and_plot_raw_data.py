@@ -1,5 +1,3 @@
-import os
-
 import matplotlib.pyplot as plt
 import pandas as pd
 import utils
@@ -12,16 +10,14 @@ def describe_and_plot_raw_data(df: pd.DataFrame):
     print("Descriptive statistics for raw data:", '\n')
     utils.print_descriptive_statistics(df)
 
-    os.makedirs(utils.PLOTS_DIR, exist_ok=True)
-    plt.hist(df['quality'], bins=10, edgecolor='black')
-    plt.title('Wine Quality Distribution')
-    plt.xlabel('Quality')
-    plt.ylabel('Frequency')
-    plt.savefig(os.path.join(utils.PLOTS_DIR, 'wine_quality_distribution.png'))
-    plt.close()
+    utils.make_plot(
+        title='Wine Quality Distribution',
+        xlabel='Quality',
+        ylabel='Frequency',
+        file_name='wine_quality_distribution',
+        plot=lambda: plt.hist(df['quality'], bins=10, edgecolor='black')
+    )
 
 
-utils.ensure_dir_exists(utils.DATA_DIR)
-
-df = utils.load_data(os.path.join(utils.DATA_DIR, 'winequality-red.csv'))
+df = utils.read_csv('winequality-red')
 describe_and_plot_raw_data(df)

@@ -1,5 +1,7 @@
 import os
+from typing import Callable
 
+import matplotlib.pyplot as plt
 import pandas as pd
 
 DATA_DIR = 'data'
@@ -11,9 +13,25 @@ def ensure_dir_exists(dir_path: str):
         raise FileNotFoundError(f"Data directory '{dir_path}' does not exist.")
 
 
-def load_data(file_path: str) -> pd.DataFrame:
-    return pd.read_csv(file_path, sep=';')
+def read_csv(file_name: str) -> pd.DataFrame:
+    ensure_dir_exists(DATA_DIR)
+    return pd.read_csv(os.path.join(DATA_DIR, f'{file_name}.csv'), sep=';')
+
+
+def save_csv(df: pd.DataFrame, file_name: str):
+    os.makedirs(DATA_DIR, exist_ok=True)
+    df.to_csv(os.path.join(DATA_DIR, f'{file_name}.csv'), index=False, sep=';')
 
 
 def print_descriptive_statistics(df: pd.DataFrame):
     print(df.describe(), '\n')
+
+
+def make_plot(title: str, xlabel: str, ylabel: str, file_name: str, plot: Callable):
+    os.makedirs(PLOTS_DIR, exist_ok=True)
+    plot()
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.savefig(os.path.join(PLOTS_DIR, f'{file_name}.png'))
+    plt.close()
