@@ -6,7 +6,15 @@ class WineQualityClassifier(torch.nn.Module):
         super().__init__()
 
         self.layers = torch.nn.Sequential(
-            torch.nn.Linear(11, 1),
+            torch.nn.Linear(11, 128),
+            torch.nn.ReLU(),
+            torch.nn.Linear(128, 64),
+            torch.nn.ReLU(),
+            torch.nn.Linear(64, 32),
+            torch.nn.ReLU(),
+            torch.nn.Linear(32, 16),
+            torch.nn.ReLU(),
+            torch.nn.Linear(16, 1),
             torch.nn.Sigmoid(),
         )
 
