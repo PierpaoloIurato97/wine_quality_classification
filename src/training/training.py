@@ -4,6 +4,8 @@ import utils
 from model import WineQualityClassifier
 
 EPOCHS = 10000
+BATCH_SIZE = 32
+EARLY_STOPPING_DELTA = 2.0
 
 
 def split_data(df: pd.DataFrame) -> tuple[torch.Tensor, torch.Tensor]:
@@ -25,12 +27,6 @@ def get_val_data() -> tuple[torch.Tensor, torch.Tensor]:
     df_val = utils.read_csv("winequality-red-validation")
 
     return split_data(df_val)
-
-
-def get_test_data() -> tuple[torch.Tensor, torch.Tensor]:
-    df_test = utils.read_csv("winequality-red-test")
-
-    return split_data(df_test)
 
 
 def train_mode(model):
@@ -55,6 +51,20 @@ def train_step(model, input, labels, optimizer, loss_function):
     return loss.item()
 
 
+def train_batch(model, input, labels, optimizer, loss_function):
+    train_loss = 0.0
+
+    for batch in range(BATCH_SIZE):
+        input_batch = input[batch::BATCH_SIZE]
+        labels_batch = labels[batch::BATCH_SIZE]
+
+        train_loss += train_step(
+            model, input_batch, labels_batch, optimizer, loss_function
+        )
+
+    return train_loss
+
+
 def val_step(model, input, labels, loss_function):
     eval_mode(model)
 
@@ -64,13 +74,19 @@ def val_step(model, input, labels, loss_function):
     return loss.item()
 
 
-def test_step(model, input, labels, loss_function):
-    eval_mode(model)
+def print_performance(epoch, train_loss, val_loss):
+    print(
+        f"Epoch {epoch + 1}/{EPOCHS}, Train Loss: {train_loss}, Val Loss: {val_loss}"
+    )
 
-    pred = model.forward(input).squeeze()
-    loss = loss_function(pred, labels)
 
-    return loss.item()
+def early_stopping(val_loss, pred_val_loss) -> bool:
+    return (val_loss - pred_val_loss) > EARLY_STOPPING_DELTA
+
+
+def shuffle_data(input, labels):
+    indices = torch.randperm(input.shape[0])
+    return input[indices], labels[indices]
 
 
 def train():
@@ -84,25 +100,30 @@ def train():
 
     pred_val_loss = float('inf')
     for epoch in range(EPOCHS):
-        train_loss = train_step(
-            wine_quality_classifier, train_input, train_labels, optimizer, loss_function
+        train_loss = train_batch(
+            wine_quality_classifier,
+            train_input,
+            train_labels,
+            optimizer,
+            loss_function
         )
+
         val_loss = val_step(
-            wine_quality_classifier, val_input, val_labels, loss_function
-        )
-        test_loss = test_step(
-            wine_quality_classifier, val_input, val_labels, loss_function
-        )
-
-        print(
-            f"Epoch {epoch + 1}/{EPOCHS}, Train Loss: {train_loss}, Val Loss: {val_loss}, Test Loss: {test_loss}"
+            wine_quality_classifier,
+            val_input,
+            val_labels,
+            loss_function
         )
 
-        if val_loss > pred_val_loss:
+        print_performance(epoch, train_loss, val_loss)
+
+        if early_stopping(val_loss, pred_val_loss):
             print("Early stopping...")
             break
 
         pred_val_loss = val_loss
+
+        train_input, train_labels = shuffle_data(train_input, train_labels)
 
 
 train()
