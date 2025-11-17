@@ -3,9 +3,11 @@ from typing import Callable
 
 import matplotlib.pyplot as plt
 import pandas as pd
+import torch
 
 DATA_DIR = 'data'
 PLOTS_DIR = 'plots'
+MODELS_DIR = 'models'
 
 
 def ensure_dir_exists(dir_path: str):
@@ -35,3 +37,18 @@ def make_plot(title: str, xlabel: str, ylabel: str, file_name: str, plot: Callab
     plt.ylabel(ylabel)
     plt.savefig(os.path.join(PLOTS_DIR, f'{file_name}.png'))
     plt.close()
+
+
+def save_model(model: torch.nn.Module, model_name: str):
+    os.makedirs(MODELS_DIR, exist_ok=True)
+    torch.save(
+        model.state_dict(),
+        os.path.join(MODELS_DIR, f'{model_name}.pth')
+    )
+
+
+def load_model(model: torch.nn.Module, model_name: str):
+    ensure_dir_exists(MODELS_DIR)
+    model.load_state_dict(torch.load(
+        os.path.join(MODELS_DIR, f'{model_name}.pth'))
+    )

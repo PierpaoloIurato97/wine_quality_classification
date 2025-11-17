@@ -1,11 +1,14 @@
+from typing import Callable
+
 import pandas as pd
 import torch
 import utils
 from model import WineQualityClassifier
 
-EPOCHS = 10000
+EPOCHS = 100
 BATCH_SIZE = 32
-EARLY_STOPPING_DELTA = 2.0
+EARLY_STOPPING_DELTA = 10.0
+MODEL_VERSION = "0.1.0"
 
 
 def split_data(df: pd.DataFrame) -> tuple[torch.Tensor, torch.Tensor]:
@@ -29,17 +32,23 @@ def get_val_data() -> tuple[torch.Tensor, torch.Tensor]:
     return split_data(df_val)
 
 
-def train_mode(model):
+def train_mode(model: WineQualityClassifier) -> None:
     torch.set_grad_enabled(True)
     model.train()
 
 
-def eval_mode(model):
+def eval_mode(model: WineQualityClassifier) -> None:
     torch.set_grad_enabled(False)
     model.eval()
 
 
-def train_step(model, input, labels, optimizer, loss_function):
+def train_step(
+    model: WineQualityClassifier,
+    input: torch.Tensor,
+    labels: torch.Tensor,
+    optimizer: torch.optim.Adam,
+    loss_function: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
+) -> float:
     train_mode(model)
 
     optimizer.zero_grad()
@@ -51,7 +60,13 @@ def train_step(model, input, labels, optimizer, loss_function):
     return loss.item()
 
 
-def train_batch(model, input, labels, optimizer, loss_function):
+def train_batch(
+    model: WineQualityClassifier,
+    input: torch.Tensor,
+    labels: torch.Tensor,
+    optimizer: torch.optim.Adam,
+    loss_function: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
+) -> float:
     train_loss = 0.0
 
     for batch in range(BATCH_SIZE):
@@ -65,7 +80,12 @@ def train_batch(model, input, labels, optimizer, loss_function):
     return train_loss
 
 
-def val_step(model, input, labels, loss_function):
+def val_step(
+    model: WineQualityClassifier,
+    input: torch.Tensor,
+    labels: torch.Tensor,
+    loss_function: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
+) -> float:
     eval_mode(model)
 
     pred = model.forward(input).squeeze()
@@ -74,34 +94,34 @@ def val_step(model, input, labels, loss_function):
     return loss.item()
 
 
-def print_performance(epoch, train_loss, val_loss):
+def print_performance(epoch: int, train_loss: float, val_loss: float) -> None:
     print(
         f"Epoch {epoch + 1}/{EPOCHS}, Train Loss: {train_loss}, Val Loss: {val_loss}"
     )
 
 
-def early_stopping(val_loss, pred_val_loss) -> bool:
+def early_stopping(val_loss: float, pred_val_loss: float) -> bool:
     return (val_loss - pred_val_loss) > EARLY_STOPPING_DELTA
 
 
-def shuffle_data(input, labels):
+def shuffle_data(input: torch.Tensor, labels: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
     indices = torch.randperm(input.shape[0])
+
     return input[indices], labels[indices]
 
 
-def train():
-    wine_quality_classifier = WineQualityClassifier()
+def train() -> None:
+    model = WineQualityClassifier()
     loss_function = torch.nn.functional.cross_entropy
-    optimizer = torch.optim.Adam(
-        wine_quality_classifier.parameters(), lr=0.001
-    )
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+
     train_input, train_labels = get_train_data()
     val_input, val_labels = get_val_data()
 
     pred_val_loss = float('inf')
     for epoch in range(EPOCHS):
         train_loss = train_batch(
-            wine_quality_classifier,
+            model,
             train_input,
             train_labels,
             optimizer,
@@ -109,7 +129,7 @@ def train():
         )
 
         val_loss = val_step(
-            wine_quality_classifier,
+            model,
             val_input,
             val_labels,
             loss_function
@@ -122,8 +142,9 @@ def train():
             break
 
         pred_val_loss = val_loss
-
         train_input, train_labels = shuffle_data(train_input, train_labels)
+
+    utils.save_model(model, f'wine_quality_model_{MODEL_VERSION}')
 
 
 train()
