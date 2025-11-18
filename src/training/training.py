@@ -5,41 +5,19 @@ import torch
 import utils
 from model import WineQualityClassifier
 
-EPOCHS = 100
+EPOCHS = 10000
 BATCH_SIZE = 32
 EARLY_STOPPING_DELTA = 10.0
-MODEL_VERSION = "0.1.0"
-
-
-def split_data(df: pd.DataFrame) -> tuple[torch.Tensor, torch.Tensor]:
-    input = torch.from_numpy(
-        df.drop(columns=['label']).to_numpy()
-    ).float()
-    labels = torch.from_numpy(df['label'].to_numpy()).float()
-
-    return input, labels
 
 
 def get_train_data() -> tuple[torch.Tensor, torch.Tensor]:
     df_train = utils.read_csv("winequality-red-train")
-
-    return split_data(df_train)
+    return utils.split_df_for_training(df_train, 'label')
 
 
 def get_val_data() -> tuple[torch.Tensor, torch.Tensor]:
     df_val = utils.read_csv("winequality-red-validation")
-
-    return split_data(df_val)
-
-
-def train_mode(model: WineQualityClassifier) -> None:
-    torch.set_grad_enabled(True)
-    model.train()
-
-
-def eval_mode(model: WineQualityClassifier) -> None:
-    torch.set_grad_enabled(False)
-    model.eval()
+    return utils.split_df_for_training(df_val, 'label')
 
 
 def train_step(
@@ -49,7 +27,7 @@ def train_step(
     optimizer: torch.optim.Adam,
     loss_function: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
 ) -> float:
-    train_mode(model)
+    utils.train_mode(model)
 
     optimizer.zero_grad()
     pred = model.forward(input).squeeze()
@@ -86,7 +64,7 @@ def val_step(
     labels: torch.Tensor,
     loss_function: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
 ) -> float:
-    eval_mode(model)
+    utils.eval_mode(model)
 
     pred = model.forward(input).squeeze()
     loss = loss_function(pred, labels)
@@ -144,7 +122,7 @@ def train() -> None:
         pred_val_loss = val_loss
         train_input, train_labels = shuffle_data(train_input, train_labels)
 
-    utils.save_model(model, f'wine_quality_model_{MODEL_VERSION}')
+    utils.save_model(model, 'wine_quality_model')
 
 
 train()

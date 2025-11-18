@@ -8,6 +8,7 @@ import torch
 DATA_DIR = 'data'
 PLOTS_DIR = 'plots'
 MODELS_DIR = 'models'
+MODEL_VERSION = '0.1.0'
 
 
 def ensure_dir_exists(dir_path: str):
@@ -29,12 +30,19 @@ def print_descriptive_statistics(df: pd.DataFrame):
     print(df.describe(), '\n')
 
 
-def make_plot(title: str, xlabel: str, ylabel: str, file_name: str, plot: Callable):
-    os.makedirs(PLOTS_DIR, exist_ok=True)
+def make_plot(title: str, file_name: str, plot: Callable, xlabel: str = '', ylabel: str = ''):
     plot()
+
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
+
+    save_plot(file_name)
+
+
+def save_plot(file_name: str):
+    os.makedirs(PLOTS_DIR, exist_ok=True)
+
     plt.savefig(os.path.join(PLOTS_DIR, f'{file_name}.png'))
     plt.close()
 
@@ -43,12 +51,33 @@ def save_model(model: torch.nn.Module, model_name: str):
     os.makedirs(MODELS_DIR, exist_ok=True)
     torch.save(
         model.state_dict(),
-        os.path.join(MODELS_DIR, f'{model_name}.pth')
+        os.path.join(MODELS_DIR, f'{model_name}_{MODEL_VERSION}.pth')
     )
 
 
 def load_model(model: torch.nn.Module, model_name: str):
     ensure_dir_exists(MODELS_DIR)
     model.load_state_dict(torch.load(
-        os.path.join(MODELS_DIR, f'{model_name}.pth'))
+        os.path.join(MODELS_DIR, f'{model_name}_{MODEL_VERSION}.pth'))
     )
+
+
+def train_mode(model: torch.nn.Module) -> None:
+    torch.set_grad_enabled(True)
+    model.train()
+
+
+def eval_mode(model: torch.nn.Module) -> None:
+    torch.set_grad_enabled(False)
+    model.eval()
+
+
+def split_df_for_training(df: pd.DataFrame, label_col_name: str) -> tuple[torch.Tensor, torch.Tensor]:
+    input = torch.from_numpy(
+        df.drop(columns=[label_col_name]).to_numpy()
+    ).float()
+    labels = torch.from_numpy(
+        df[label_col_name].to_numpy()
+    ).float()
+
+    return input, labels
