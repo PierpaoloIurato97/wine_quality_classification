@@ -1,6 +1,5 @@
 from typing import Callable
 
-import pandas as pd
 import torch
 import utils
 from model import WineQualityClassifier
