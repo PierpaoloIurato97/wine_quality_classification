@@ -7,12 +7,15 @@ from model import WineQualityClassifier
 EPOCHS = 10000
 BATCH_SIZE = 64
 EARLY_STOPPING_ENABLED = False
-EARLY_STOPPING_DELTA = 10.0
+EARLY_STOPPING_DELTA = 1.0
 
 
-def get_train_data() -> tuple[torch.Tensor, torch.Tensor]:
+def get_train_loader() -> tuple[torch.utils.data.DataLoader, int]:
     df_train = utils.read_csv("winequality-red-train")
-    return utils.split_df_for_training(df_train, 'label')
+    train_input, train_labels = utils.split_df_for_training(df_train, 'label')
+    dataset = torch.utils.data.TensorDataset(train_input, train_labels)
+
+    return torch.utils.data.DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True), train_input.shape[0]
 
 
 def get_val_data() -> tuple[torch.Tensor, torch.Tensor]:
@@ -26,7 +29,7 @@ def train_step(
     labels: torch.Tensor,
     optimizer: torch.optim.Adam,
     loss_function: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
-) -> float:
+) -> torch.Tensor:
     utils.train_mode(model)
 
     optimizer.zero_grad()
@@ -35,57 +38,52 @@ def train_step(
     loss.backward()
     optimizer.step()
 
-    return loss.item()
+    return pred
 
 
 def train_batch(
     model: WineQualityClassifier,
-    input: torch.Tensor,
-    labels: torch.Tensor,
+    loader: torch.utils.data.DataLoader,
     optimizer: torch.optim.Adam,
     loss_function: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
-) -> float:
-    train_loss = 0.0
+) -> int:
+    num_correct = 0
 
-    for batch in range(BATCH_SIZE):
-        input_batch = input[batch::BATCH_SIZE]
-        labels_batch = labels[batch::BATCH_SIZE]
-
-        train_loss += train_step(
-            model, input_batch, labels_batch, optimizer, loss_function
+    for _, (input, labels) in enumerate(loader):
+        pred = train_step(
+            model, input, labels, optimizer, loss_function
         )
 
-    return train_loss
+        num_correct += (pred == labels).sum().item()
+
+    return num_correct
 
 
 def val_step(
     model: WineQualityClassifier,
     input: torch.Tensor,
     labels: torch.Tensor,
-    loss_function: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
-) -> float:
+) -> int:
     utils.eval_mode(model)
 
     pred = model.forward(input).squeeze()
-    loss = loss_function(pred, labels)
+    num_correct = (pred == labels).sum().item()
 
-    return loss.item()
+    return int(num_correct)
 
 
-def print_performance(epoch: int, train_loss: float, val_loss: float) -> None:
+def calculate_accuracy(num_correct: int, dataset_len: int) -> float:
+    return round(num_correct / dataset_len, 2)
+
+
+def print_performance(epoch: int, train_accurancy: float, val_accurancy: float) -> None:
     print(
-        f"Epoch {epoch + 1}/{EPOCHS}, Train Loss: {train_loss}, Val Loss: {val_loss}"
+        f"Epoch {epoch + 1}/{EPOCHS}, Train Accurancy: {train_accurancy}, Val Accurancy: {val_accurancy}"
     )
 
 
-def early_stopping(val_loss: float, pred_val_loss: float) -> bool:
-    return (val_loss - pred_val_loss) > EARLY_STOPPING_DELTA
-
-
-def shuffle_data(input: torch.Tensor, labels: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-    indices = torch.randperm(input.shape[0])
-
-    return input[indices], labels[indices]
+def early_stopping(val_accurancy: float, pred_val_accurancy: float) -> bool:
+    return (val_accurancy - pred_val_accurancy) < EARLY_STOPPING_DELTA
 
 
 def train() -> None:
@@ -93,37 +91,37 @@ def train() -> None:
     loss_function = torch.nn.functional.cross_entropy
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-    train_input, train_labels = get_train_data()
+    train_loader, dataset_len = get_train_loader()
     val_input, val_labels = get_val_data()
 
     try:
-        pred_val_loss = float('inf')
+        pred_val_accurancy = float('inf')
         for epoch in range(EPOCHS):
-            train_loss = train_batch(
+            num_correct = train_batch(
                 model,
-                train_input,
-                train_labels,
+                train_loader,
                 optimizer,
                 loss_function
             )
 
-            val_loss = val_step(
+            val_correct = val_step(
                 model,
                 val_input,
-                val_labels,
-                loss_function
+                val_labels
             )
 
-            print_performance(epoch, train_loss, val_loss)
+            train_accurancy = calculate_accuracy(num_correct, dataset_len)
+            val_accurancy = calculate_accuracy(val_correct, val_input.shape[0])
 
-            if early_stopping(val_loss, pred_val_loss) and EARLY_STOPPING_ENABLED:
+            print_performance(epoch, train_accurancy, val_accurancy)
+
+            if early_stopping(val_accurancy, pred_val_accurancy) and EARLY_STOPPING_ENABLED:
                 print("Early stopping...")
                 break
 
-            if val_loss < pred_val_loss:
-                pred_val_loss = val_loss
+            if val_accurancy > pred_val_accurancy:
+                pred_val_accurancy = val_accurancy
 
-            train_input, train_labels = shuffle_data(train_input, train_labels)
     except KeyboardInterrupt:
         print("Training interrupted")
     finally:
