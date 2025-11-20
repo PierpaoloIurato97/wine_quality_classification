@@ -5,7 +5,8 @@ import utils
 from model import WineQualityClassifier
 
 EPOCHS = 10000
-BATCH_SIZE = 32
+BATCH_SIZE = 64
+EARLY_STOPPING_ENABLED = False
 EARLY_STOPPING_DELTA = 10.0
 
 
@@ -95,33 +96,39 @@ def train() -> None:
     train_input, train_labels = get_train_data()
     val_input, val_labels = get_val_data()
 
-    pred_val_loss = float('inf')
-    for epoch in range(EPOCHS):
-        train_loss = train_batch(
-            model,
-            train_input,
-            train_labels,
-            optimizer,
-            loss_function
-        )
+    try:
+        pred_val_loss = float('inf')
+        for epoch in range(EPOCHS):
+            train_loss = train_batch(
+                model,
+                train_input,
+                train_labels,
+                optimizer,
+                loss_function
+            )
 
-        val_loss = val_step(
-            model,
-            val_input,
-            val_labels,
-            loss_function
-        )
+            val_loss = val_step(
+                model,
+                val_input,
+                val_labels,
+                loss_function
+            )
 
-        print_performance(epoch, train_loss, val_loss)
+            print_performance(epoch, train_loss, val_loss)
 
-        if early_stopping(val_loss, pred_val_loss):
-            print("Early stopping...")
-            break
+            if early_stopping(val_loss, pred_val_loss) and EARLY_STOPPING_ENABLED:
+                print("Early stopping...")
+                break
 
-        pred_val_loss = val_loss
-        train_input, train_labels = shuffle_data(train_input, train_labels)
+            if val_loss < pred_val_loss:
+                pred_val_loss = val_loss
 
-    utils.save_model(model, 'wine_quality_model')
+            train_input, train_labels = shuffle_data(train_input, train_labels)
+    except KeyboardInterrupt:
+        print("Training interrupted")
+    finally:
+        print("Saving model...")
+        utils.save_model(model, 'wine_quality_model')
 
 
 train()
