@@ -14,7 +14,7 @@ def test_step(model: WineQualityClassifier) -> None:
 
     input, labels = get_test_data()
 
-    pred = model.forward(input).squeeze()
+    pred = model.forward(input).argmax(dim=1)
 
     true_positives, true_negatives, false_positives, false_negatives, accuracy = calculate_metrics(
         pred, labels

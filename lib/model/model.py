@@ -1,4 +1,5 @@
 import torch
+from torch.nn import BatchNorm1d
 
 
 class WineQualityClassifier(torch.nn.Module):
@@ -6,16 +7,15 @@ class WineQualityClassifier(torch.nn.Module):
         super().__init__()
 
         self.layers = torch.nn.Sequential(
-            torch.nn.Linear(11, 128),
+            torch.nn.Linear(11, 33),
+            torch.nn.BatchNorm1d(33),
             torch.nn.ReLU(),
-            torch.nn.Linear(128, 64),
+            torch.nn.Dropout(0.1),
+            torch.nn.Linear(33, 11),
+            torch.nn.BatchNorm1d(11),
             torch.nn.ReLU(),
-            torch.nn.Linear(64, 32),
-            torch.nn.ReLU(),
-            torch.nn.Linear(32, 16),
-            torch.nn.ReLU(),
-            torch.nn.Linear(16, 1),
-            torch.nn.Sigmoid(),
+            torch.nn.Dropout(0.1),
+            torch.nn.Linear(11, 2),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

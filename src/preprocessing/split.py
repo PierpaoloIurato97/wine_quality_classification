@@ -1,9 +1,9 @@
 import pandas as pd
 import utils
 
-TRAIN_RATIO = 0.8
-VALIDATION_RATIO = 0.1
-TEST_RATIO = 0.1
+TRAIN_RATIO = 0.6
+VALIDATION_RATIO = 0.2
+TEST_RATIO = 0.2
 
 
 def shuffle(df: pd.DataFrame):
