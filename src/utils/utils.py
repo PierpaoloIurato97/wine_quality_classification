@@ -14,20 +14,16 @@ def ensure_dir_exists(dir_path: str):
 
 
 def read_csv(file_name: str) -> pd.DataFrame:
-    data_dir_path = os.path.join('..', config.DATA_DIR)
-
-    ensure_dir_exists(data_dir_path)
+    ensure_dir_exists(config.DATA_DIR)
     return pd.read_csv(
-        os.path.join(data_dir_path, f'{file_name}.csv'), sep=';'
+        os.path.join(config.DATA_DIR, f'{file_name}.csv'), sep=';'
     )
 
 
 def save_csv(df: pd.DataFrame, file_name: str):
-    data_dir_path = os.path.join('..', config.DATA_DIR)
-
-    ensure_dir_exists(data_dir_path)
+    ensure_dir_exists(config.DATA_DIR)
     df.to_csv(
-        os.path.join(data_dir_path, f'{file_name}.csv'), index=False, sep=';'
+        os.path.join(config.DATA_DIR, f'{file_name}.csv'), index=False, sep=';'
     )
 
 
@@ -51,31 +47,25 @@ def make_plot(title: str, file_name: str, plot: Callable, xlabel: str = '', ylab
 
 
 def save_plot(file_name: str):
-    plot_dir_path = os.path.join('..', config.PLOTS_DIR)
-
-    os.makedirs(plot_dir_path, exist_ok=True)
-
-    plt.savefig(os.path.join(plot_dir_path, f'{file_name}.png'))
+    os.makedirs(config.PLOTS_DIR, exist_ok=True)
+    plt.savefig(os.path.join(config.PLOTS_DIR, f'{file_name}.png'))
     plt.close()
 
 
 def save_model(model: torch.nn.Module, model_name: str):
-    model_dir_path = os.path.join('..', config.MODELS_DIR)
-
-    os.makedirs(model_dir_path, exist_ok=True)
+    os.makedirs(config.MODELS_DIR, exist_ok=True)
     torch.save(
         model.state_dict(),
-        os.path.join(model_dir_path,
-                     f'{model_name}_{config.MODEL_VERSION}.pth')
-    )
+        os.path.join(
+            config.MODELS_DIR,
+            f'{model_name}_{config.MODEL_VERSION}.pth'
+        ))
 
 
 def load_model(model: torch.nn.Module, model_name: str):
-    model_dir_path = os.path.join('..', config.MODELS_DIR)
-
-    ensure_dir_exists(model_dir_path)
+    ensure_dir_exists(config.MODELS_DIR)
     model.load_state_dict(torch.load(
-        os.path.join(model_dir_path, f'{model_name}_{config.MODEL_VERSION}.pth'))
+        os.path.join(config.MODELS_DIR, f'{model_name}_{config.MODEL_VERSION}.pth'))
     )
 
 
