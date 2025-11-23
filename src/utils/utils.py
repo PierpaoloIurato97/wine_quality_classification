@@ -37,11 +37,11 @@ def print_descriptive_statistics(df: pd.DataFrame):
 
 
 def make_plot(title: str, file_name: str, plot: Callable, xlabel: str = '', ylabel: str = ''):
-    plot()
-
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
+
+    plot()
 
     save_plot(file_name)
 
