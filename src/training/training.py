@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, cast
 
 import torch
 from model import WineQualityClassifier
@@ -13,16 +13,26 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def get_train_loader() -> tuple[torch.utils.data.DataLoader, int]:
-    df_train = utils.read_csv("winequality-red-train")
-    train_input, train_labels = utils.split_df_for_inference(df_train, 'label')
-    dataset = torch.utils.data.TensorDataset(train_input, train_labels.long())
+    df = utils.read_csv("winequality-red-train")
 
-    return torch.utils.data.DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, pin_memory=True), train_input.shape[0]
+    input, labels = utils.split_df_for_inference(df, 'label')
+    labels = labels.long()
+
+    dataset_len = input.shape[0]
+
+    dataset: torch.utils.data.TensorDataset = torch.utils.data.TensorDataset(
+        input, labels
+    )
+    loader: torch.utils.data.DataLoader = torch.utils.data.DataLoader(
+        dataset, batch_size=BATCH_SIZE, shuffle=True, pin_memory=True
+    )
+
+    return loader, dataset_len
 
 
 def get_val_data() -> tuple[torch.Tensor, torch.Tensor]:
-    df_val = utils.read_csv("winequality-red-validation")
-    return utils.split_df_for_inference(df_val, 'label')
+    df = utils.read_csv("winequality-red-validation")
+    return utils.split_df_for_inference(df, 'label')
 
 
 def train_step(
@@ -40,7 +50,9 @@ def train_step(
     loss.backward()
     optimizer.step()
 
-    return pred.argmax(dim=1)
+    pred = pred.argmax(dim=1)
+
+    return pred
 
 
 def train_batch(
@@ -52,6 +64,9 @@ def train_batch(
     num_correct = 0
 
     for _, (input, labels) in enumerate(loader):
+        input = cast(torch.Tensor, input)
+        labels = cast(torch.Tensor, labels)
+
         input = input.to(DEVICE, non_blocking=True)
         labels = labels.to(DEVICE, non_blocking=True)
 
@@ -74,21 +89,13 @@ def val_step(
     pred = model.forward(input).argmax(dim=1)
     num_correct = (pred == labels).sum().item()
 
-    return int(num_correct)
-
-
-def calculate_accuracy(num_correct: int, dataset_len: int) -> float:
-    return round(num_correct / dataset_len, 2)
+    return num_correct
 
 
 def print_performance(epoch: int, train_accurancy: float, val_accurancy: float) -> None:
     print(
         f"Epoch {epoch + 1}/{EPOCHS}, Train Accurancy: {train_accurancy}, Val Accurancy: {val_accurancy}"
     )
-
-
-def early_stopping(val_accurancy: float, pred_val_accurancy: float) -> bool:
-    return (pred_val_accurancy - val_accurancy) > EARLY_STOPPING_DELTA and val_accurancy > 0.5
 
 
 def train() -> None:
@@ -109,7 +116,6 @@ def train() -> None:
     val_labels = val_labels.to(DEVICE)
 
     try:
-        pred_val_accurancy = 0.0
         for epoch in range(EPOCHS):
             num_correct = train_batch(
                 model,
@@ -124,17 +130,14 @@ def train() -> None:
                 val_labels
             )
 
-            train_accurancy = calculate_accuracy(num_correct, dataset_len)
-            val_accurancy = calculate_accuracy(val_correct, val_input.shape[0])
+            train_accurancy = utils.calculate_accuracy(
+                num_correct, dataset_len
+            )
+            val_accurancy = utils.calculate_accuracy(
+                val_correct, val_input.shape[0]
+            )
 
             print_performance(epoch, train_accurancy, val_accurancy)
-
-            if early_stopping(val_accurancy, pred_val_accurancy) and EARLY_STOPPING_ENABLED:
-                print("Early stopping...")
-                break
-
-            if val_accurancy > pred_val_accurancy:
-                pred_val_accurancy = val_accurancy
 
     except KeyboardInterrupt:
         print("Training interrupted")

@@ -34,6 +34,11 @@ def save_csv(df: pd.DataFrame, file_name: str):
     )
 
 
+def ensure_col_exists(df: pd.DataFrame, col_name: str):
+    if col_name not in df.columns:
+        raise ValueError(f"Column '{col_name}' not found in df.")
+
+
 def print_descriptive_statistics(df: pd.DataFrame):
     print(df.describe(), '\n')
 
@@ -95,3 +100,7 @@ def split_df_for_inference(df: pd.DataFrame, label_col_name: str) -> tuple[torch
     ).float()
 
     return input, labels
+
+
+def calculate_accuracy(num_correct: int, dataset_len: int) -> float:
+    return round(num_correct / dataset_len, 2)

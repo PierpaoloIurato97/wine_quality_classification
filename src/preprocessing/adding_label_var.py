@@ -4,8 +4,7 @@ import utils
 def add_label_var() -> None:
     df = utils.read_csv('winequality-red')
 
-    if 'quality' not in df.columns:
-        raise ValueError("Column 'quality' not found in raw data.")
+    utils.ensure_col_exists(df, 'quality')
 
     df['label'] = (df['quality'] > 5).astype(int)
     del df['quality']

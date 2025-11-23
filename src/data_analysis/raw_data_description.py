@@ -3,11 +3,10 @@ import matplotlib.pyplot as plt
 import utils
 
 
-def describe_and_plot_raw_data():
+def describe_raw_data():
     df = utils.read_csv('winequality-red')
 
-    if 'quality' not in df.columns:
-        raise ValueError("Column 'label' not found in raw data.")
+    utils.ensure_col_exists(df, 'quality')
 
     print("Descriptive statistics for raw data:", '\n')
     utils.print_descriptive_statistics(df)

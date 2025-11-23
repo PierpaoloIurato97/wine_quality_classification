@@ -1,2 +1,2 @@
-from .describe_and_plot_processed_data import describe_and_plot_processed_data
-from .describe_and_plot_raw_data import describe_and_plot_raw_data
+from .processed_data_description import describe_processed_data
+from .raw_data_description import describe_raw_data

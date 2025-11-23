@@ -3,17 +3,13 @@ import matplotlib.pyplot as plt
 import utils
 
 
-def describe_and_plot_processed_data():
+def describe_processed_data():
     df = utils.read_csv('winequality-red-with-label-standardized')
 
-    if 'label' not in df.columns:
-        raise ValueError("Column 'label' not found in processed data.")
+    utils.ensure_col_exists(df, 'label')
 
     print("Descriptive statistics for processed data:", '\n')
     utils.print_descriptive_statistics(df)
-
-    print("Class distribution in processed data:")
-    print(df['label'].value_counts())
 
     utils.make_plot(
         title='Processed Wine Label Distribution',

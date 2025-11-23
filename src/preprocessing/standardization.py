@@ -10,6 +10,9 @@ COLUMNS_TO_STANDARDIZE = [
 def standardize():
     df = utils.read_csv('winequality-red-with-label')
 
+    for col in COLUMNS_TO_STANDARDIZE:
+        utils.ensure_col_exists(df, col)
+
     df[COLUMNS_TO_STANDARDIZE] = (
         df[COLUMNS_TO_STANDARDIZE] - df[COLUMNS_TO_STANDARDIZE].mean()
     ) / df[COLUMNS_TO_STANDARDIZE].std()

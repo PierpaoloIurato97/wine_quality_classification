@@ -6,50 +6,26 @@ import utils
 
 
 def get_test_data() -> tuple[torch.Tensor, torch.Tensor]:
-    df_test = utils.read_csv("winequality-red-test")
-    return utils.split_df_for_inference(df_test, 'label')
+    df = utils.read_csv("winequality-red-test")
+    return utils.split_df_for_inference(df, 'label')
 
 
-def test_step(model: WineQualityClassifier) -> None:
+def test_step(model: WineQualityClassifier, input: torch.Tensor) -> torch.Tensor:
     utils.eval_mode(model)
-
-    input, labels = get_test_data()
-
     pred = model.forward(input).argmax(dim=1)
-
-    true_positives, true_negatives, false_positives, false_negatives, accuracy = calculate_metrics(
-        pred, labels
-    )
-
-    utils.make_plot(
-        title='Confusion Matrix',
-        file_name='confusion_matrix',
-        plot=lambda: plot_confusion_matrix(
-            true_positives, true_negatives, false_positives, false_negatives
-        )
-    )
-
-    print_accuracy(accuracy)
+    return pred
 
 
-def calculate_metrics(
+def calculate_confusion_matrix(
         pred: torch.Tensor,
         labels: torch.Tensor
-) -> tuple[
-    torch.types.Number,
-    torch.types.Number,
-    torch.types.Number,
-    torch.types.Number,
-    float
-]:
+) -> tuple[int, int, int, int]:
     true_positives = ((pred >= 0.5) & (labels == 1)).sum().item()
     true_negatives = ((pred < 0.5) & (labels == 0)).sum().item()
     false_positives = ((pred >= 0.5) & (labels == 0)).sum().item()
     false_negatives = ((pred < 0.5) & (labels == 1)).sum().item()
 
-    accuracy = (true_positives + true_negatives) / len(labels)
-
-    return true_positives, true_negatives, false_positives, false_negatives, accuracy
+    return true_positives, true_negatives, false_positives, false_negatives
 
 
 def plot_confusion_matrix(
@@ -85,4 +61,23 @@ def print_accuracy(accuracy: float) -> None:
 def evaluate():
     model = WineQualityClassifier()
     utils.load_model(model, 'wine_quality_model')
-    test_step(model)
+
+    test_input, test_labels = get_test_data()
+    dataset_len = test_input.shape[0]
+
+    pred = test_step(model, test_input)
+    num_correct = (pred == test_labels).sum().item()
+
+    accurancy = utils.calculate_accuracy(num_correct, dataset_len)
+    true_positives, true_negatives, false_positives, false_negatives = calculate_confusion_matrix(
+        pred, test_labels
+    )
+
+    utils.make_plot(
+        title='Confusion Matrix',
+        file_name='confusion_matrix',
+        plot=lambda: plot_confusion_matrix(
+            true_positives, true_negatives, false_positives, false_negatives
+        )
+    )
+    print_accuracy(accurancy)
