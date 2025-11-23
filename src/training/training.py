@@ -10,7 +10,7 @@ from model import WineQualityClassifier
 def get_train_loader() -> tuple[torch.utils.data.DataLoader, int]:
     df = utils.read_csv("winequality-red-train")
 
-    input, labels = utils.split_df_for_inference(df, 'label')
+    input, labels = utils.split_df_for_inference(df)
     labels = labels.long()
 
     dataset_len = input.shape[0]
@@ -27,7 +27,7 @@ def get_train_loader() -> tuple[torch.utils.data.DataLoader, int]:
 
 def get_val_data() -> tuple[torch.Tensor, torch.Tensor]:
     df = utils.read_csv("winequality-red-validation")
-    return utils.split_df_for_inference(df, 'label')
+    return utils.split_df_for_inference(df)
 
 
 def train_step(

@@ -89,12 +89,12 @@ def eval_mode(model: torch.nn.Module) -> None:
     model.eval()
 
 
-def split_df_for_inference(df: pd.DataFrame, label_col_name: str) -> tuple[torch.Tensor, torch.Tensor]:
+def split_df_for_inference(df: pd.DataFrame) -> tuple[torch.Tensor, torch.Tensor]:
     input = torch.from_numpy(
-        df.drop(columns=[label_col_name]).to_numpy()
+        df.drop(columns=[config.LABEL]).to_numpy()
     ).float()
     labels = torch.from_numpy(
-        df[label_col_name].to_numpy()
+        df[config.LABEL].to_numpy()
     ).float()
 
     return input, labels

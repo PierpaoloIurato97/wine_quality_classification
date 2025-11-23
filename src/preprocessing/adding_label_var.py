@@ -1,3 +1,4 @@
+import config
 import utils
 
 
@@ -6,7 +7,7 @@ def add_label_var() -> None:
 
     utils.ensure_col_exists(df, 'quality')
 
-    df['label'] = (df['quality'] > 5).astype(int)
+    df[config.LABEL] = (df['quality'] > 5).astype(int)
     del df['quality']
 
     utils.save_csv(df, 'winequality-red-with-label')

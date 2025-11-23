@@ -12,8 +12,9 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 TRAIN_RATIO = 0.6
 VALIDATION_RATIO = 0.2
 TEST_RATIO = 0.2
-COLUMNS_TO_STANDARDIZE = [
+FEATURES = [
     'fixed acidity', 'volatile acidity', 'citric acid', 'residual sugar',
     'chlorides', 'free sulfur dioxide', 'total sulfur dioxide', 'density',
     'pH', 'sulphates', 'alcohol'
 ]
+LABEL = 'label'

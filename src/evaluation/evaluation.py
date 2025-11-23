@@ -8,7 +8,7 @@ from model import WineQualityClassifier
 
 def get_test_data() -> tuple[torch.Tensor, torch.Tensor]:
     df = utils.read_csv("winequality-red-test")
-    return utils.split_df_for_inference(df, 'label')
+    return utils.split_df_for_inference(df)
 
 
 def test_step(model: WineQualityClassifier, input: torch.Tensor) -> torch.Tensor:
