@@ -17,13 +17,21 @@ def ensure_dir_exists(dir_path: str):
 
 
 def read_csv(file_name: str) -> pd.DataFrame:
-    ensure_dir_exists(DATA_DIR)
-    return pd.read_csv(os.path.join(DATA_DIR, f'{file_name}.csv'), sep=';')
+    data_dir_path = os.path.join('..', DATA_DIR)
+
+    ensure_dir_exists(data_dir_path)
+    return pd.read_csv(
+        os.path.join(data_dir_path, f'{file_name}.csv'), sep=';'
+    )
 
 
 def save_csv(df: pd.DataFrame, file_name: str):
-    os.makedirs(DATA_DIR, exist_ok=True)
-    df.to_csv(os.path.join(DATA_DIR, f'{file_name}.csv'), index=False, sep=';')
+    data_dir_path = os.path.join('..', DATA_DIR)
+
+    ensure_dir_exists(data_dir_path)
+    df.to_csv(
+        os.path.join(data_dir_path, f'{file_name}.csv'), index=False, sep=';'
+    )
 
 
 def print_descriptive_statistics(df: pd.DataFrame):
@@ -41,24 +49,30 @@ def make_plot(title: str, file_name: str, plot: Callable, xlabel: str = '', ylab
 
 
 def save_plot(file_name: str):
-    os.makedirs(PLOTS_DIR, exist_ok=True)
+    plot_dir_path = os.path.join('..', PLOTS_DIR)
 
-    plt.savefig(os.path.join(PLOTS_DIR, f'{file_name}.png'))
+    os.makedirs(plot_dir_path, exist_ok=True)
+
+    plt.savefig(os.path.join(plot_dir_path, f'{file_name}.png'))
     plt.close()
 
 
 def save_model(model: torch.nn.Module, model_name: str):
-    os.makedirs(MODELS_DIR, exist_ok=True)
+    model_dir_path = os.path.join('..', MODELS_DIR)
+
+    os.makedirs(model_dir_path, exist_ok=True)
     torch.save(
         model.state_dict(),
-        os.path.join(MODELS_DIR, f'{model_name}_{MODEL_VERSION}.pth')
+        os.path.join(model_dir_path, f'{model_name}_{MODEL_VERSION}.pth')
     )
 
 
 def load_model(model: torch.nn.Module, model_name: str):
-    ensure_dir_exists(MODELS_DIR)
+    model_dir_path = os.path.join('..', MODELS_DIR)
+
+    ensure_dir_exists(model_dir_path)
     model.load_state_dict(torch.load(
-        os.path.join(MODELS_DIR, f'{model_name}_{MODEL_VERSION}.pth'))
+        os.path.join(model_dir_path, f'{model_name}_{MODEL_VERSION}.pth'))
     )
 
 
@@ -72,7 +86,7 @@ def eval_mode(model: torch.nn.Module) -> None:
     model.eval()
 
 
-def split_df_for_training(df: pd.DataFrame, label_col_name: str) -> tuple[torch.Tensor, torch.Tensor]:
+def split_df_for_inference(df: pd.DataFrame, label_col_name: str) -> tuple[torch.Tensor, torch.Tensor]:
     input = torch.from_numpy(
         df.drop(columns=[label_col_name]).to_numpy()
     ).float()

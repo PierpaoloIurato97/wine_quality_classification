@@ -1,5 +1,4 @@
 import torch
-from torch.nn import BatchNorm1d
 
 
 class WineQualityClassifier(torch.nn.Module):

@@ -1,12 +1,13 @@
 import matplotlib.pyplot as plt
 import torch
-import utils
 from model import WineQualityClassifier
+
+import utils
 
 
 def get_test_data() -> tuple[torch.Tensor, torch.Tensor]:
     df_test = utils.read_csv("winequality-red-test")
-    return utils.split_df_for_training(df_test, 'label')
+    return utils.split_df_for_inference(df_test, 'label')
 
 
 def test_step(model: WineQualityClassifier) -> None:
@@ -81,6 +82,7 @@ def print_accuracy(accuracy: float) -> None:
     print(f"Accuracy: {accuracy * 100:.2f}%")
 
 
-model = WineQualityClassifier()
-utils.load_model(model, 'wine_quality_model')
-test_step(model)
+def evaluate():
+    model = WineQualityClassifier()
+    utils.load_model(model, 'wine_quality_model')
+    test_step(model)

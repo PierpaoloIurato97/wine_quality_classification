@@ -1,8 +1,9 @@
 from typing import Callable
 
 import torch
-import utils
 from model import WineQualityClassifier
+
+import utils
 
 EPOCHS = 10000
 BATCH_SIZE = 128
@@ -13,7 +14,7 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 def get_train_loader() -> tuple[torch.utils.data.DataLoader, int]:
     df_train = utils.read_csv("winequality-red-train")
-    train_input, train_labels = utils.split_df_for_training(df_train, 'label')
+    train_input, train_labels = utils.split_df_for_inference(df_train, 'label')
     dataset = torch.utils.data.TensorDataset(train_input, train_labels.long())
 
     return torch.utils.data.DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, pin_memory=True), train_input.shape[0]
@@ -21,7 +22,7 @@ def get_train_loader() -> tuple[torch.utils.data.DataLoader, int]:
 
 def get_val_data() -> tuple[torch.Tensor, torch.Tensor]:
     df_val = utils.read_csv("winequality-red-validation")
-    return utils.split_df_for_training(df_val, 'label')
+    return utils.split_df_for_inference(df_val, 'label')
 
 
 def train_step(
@@ -95,7 +96,11 @@ def train() -> None:
     model.to(DEVICE)
 
     loss_function = torch.nn.functional.cross_entropy
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
+    optimizer = torch.optim.Adam(
+        model.parameters(),
+        lr=0.001,
+        weight_decay=1e-4
+    )
 
     train_loader, dataset_len = get_train_loader()
 
@@ -136,6 +141,3 @@ def train() -> None:
     finally:
         print("Saving model...")
         utils.save_model(model, 'wine_quality_model')
-
-
-train()

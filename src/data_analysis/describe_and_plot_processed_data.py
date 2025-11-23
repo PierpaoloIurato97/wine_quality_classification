@@ -1,9 +1,11 @@
 import matplotlib.pyplot as plt
-import pandas as pd
+
 import utils
 
 
-def describe_and_plot_processed_data(df: pd.DataFrame):
+def describe_and_plot_processed_data():
+    df = utils.read_csv('winequality-red-with-label-standardized')
+
     if 'label' not in df.columns:
         raise ValueError("Column 'label' not found in processed data.")
 
@@ -20,7 +22,3 @@ def describe_and_plot_processed_data(df: pd.DataFrame):
         file_name='wine_label_distribution',
         plot=lambda: plt.hist(df['label'], bins=2, edgecolor='black')
     )
-
-
-df = utils.read_csv('winequality-red-with-label-standardized')
-describe_and_plot_processed_data(df)

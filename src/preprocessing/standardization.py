@@ -1,4 +1,3 @@
-import pandas as pd
 import utils
 
 COLUMNS_TO_STANDARDIZE = [
@@ -8,12 +7,11 @@ COLUMNS_TO_STANDARDIZE = [
 ]
 
 
-def standardize(df: pd.DataFrame):
+def standardize():
+    df = utils.read_csv('winequality-red-with-label')
+
     df[COLUMNS_TO_STANDARDIZE] = (
         df[COLUMNS_TO_STANDARDIZE] - df[COLUMNS_TO_STANDARDIZE].mean()
     ) / df[COLUMNS_TO_STANDARDIZE].std()
 
-
-df = utils.read_csv('winequality-red-with-label')
-standardize(df)
-utils.save_csv(df, 'winequality-red-with-label-standardized')
+    utils.save_csv(df, 'winequality-red-with-label-standardized')
