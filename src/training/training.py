@@ -1,10 +1,10 @@
 from typing import Callable, cast
 
 import torch
-from model import WineQualityClassifier
 
 import config
 import utils
+from models import WineQualityClassifier
 
 
 def get_train_loader() -> tuple[torch.utils.data.DataLoader, int]:

@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import torch
-from model import WineQualityClassifier
 
 import utils
+from models import WineQualityClassifier
 
 
 def get_test_data() -> tuple[torch.Tensor, torch.Tensor]:
