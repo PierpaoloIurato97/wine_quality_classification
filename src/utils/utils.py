@@ -5,10 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import torch
 
-DATA_DIR = 'data'
-PLOTS_DIR = 'plots'
-MODELS_DIR = 'models'
-MODEL_VERSION = '0.1.0'
+import config
 
 
 def ensure_dir_exists(dir_path: str):
@@ -17,7 +14,7 @@ def ensure_dir_exists(dir_path: str):
 
 
 def read_csv(file_name: str) -> pd.DataFrame:
-    data_dir_path = os.path.join('..', DATA_DIR)
+    data_dir_path = os.path.join('..', config.DATA_DIR)
 
     ensure_dir_exists(data_dir_path)
     return pd.read_csv(
@@ -26,7 +23,7 @@ def read_csv(file_name: str) -> pd.DataFrame:
 
 
 def save_csv(df: pd.DataFrame, file_name: str):
-    data_dir_path = os.path.join('..', DATA_DIR)
+    data_dir_path = os.path.join('..', config.DATA_DIR)
 
     ensure_dir_exists(data_dir_path)
     df.to_csv(
@@ -54,7 +51,7 @@ def make_plot(title: str, file_name: str, plot: Callable, xlabel: str = '', ylab
 
 
 def save_plot(file_name: str):
-    plot_dir_path = os.path.join('..', PLOTS_DIR)
+    plot_dir_path = os.path.join('..', config.PLOTS_DIR)
 
     os.makedirs(plot_dir_path, exist_ok=True)
 
@@ -63,21 +60,22 @@ def save_plot(file_name: str):
 
 
 def save_model(model: torch.nn.Module, model_name: str):
-    model_dir_path = os.path.join('..', MODELS_DIR)
+    model_dir_path = os.path.join('..', config.MODELS_DIR)
 
     os.makedirs(model_dir_path, exist_ok=True)
     torch.save(
         model.state_dict(),
-        os.path.join(model_dir_path, f'{model_name}_{MODEL_VERSION}.pth')
+        os.path.join(model_dir_path,
+                     f'{model_name}_{config.MODEL_VERSION}.pth')
     )
 
 
 def load_model(model: torch.nn.Module, model_name: str):
-    model_dir_path = os.path.join('..', MODELS_DIR)
+    model_dir_path = os.path.join('..', config.MODELS_DIR)
 
     ensure_dir_exists(model_dir_path)
     model.load_state_dict(torch.load(
-        os.path.join(model_dir_path, f'{model_name}_{MODEL_VERSION}.pth'))
+        os.path.join(model_dir_path, f'{model_name}_{config.MODEL_VERSION}.pth'))
     )
 
 

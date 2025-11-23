@@ -1,10 +1,7 @@
 import pandas as pd
 
+import config
 import utils
-
-TRAIN_RATIO = 0.6
-VALIDATION_RATIO = 0.2
-TEST_RATIO = 0.2
 
 
 def shuffle(df: pd.DataFrame):
@@ -13,8 +10,8 @@ def shuffle(df: pd.DataFrame):
 
 def split_df(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     total_rows = len(df)
-    train_end = int(total_rows * TRAIN_RATIO)
-    validation_end = train_end + int(total_rows * VALIDATION_RATIO)
+    train_end = int(total_rows * config.TRAIN_RATIO)
+    validation_end = train_end + int(total_rows * config.VALIDATION_RATIO)
 
     train_df = df.iloc[:train_end]
     validation_df = df.iloc[train_end:validation_end]

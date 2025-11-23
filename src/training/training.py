@@ -3,13 +3,8 @@ from typing import Callable, cast
 import torch
 from model import WineQualityClassifier
 
+import config
 import utils
-
-EPOCHS = 10000
-BATCH_SIZE = 128
-EARLY_STOPPING_ENABLED = False
-EARLY_STOPPING_DELTA = 0.05
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def get_train_loader() -> tuple[torch.utils.data.DataLoader, int]:
@@ -24,7 +19,7 @@ def get_train_loader() -> tuple[torch.utils.data.DataLoader, int]:
         input, labels
     )
     loader: torch.utils.data.DataLoader = torch.utils.data.DataLoader(
-        dataset, batch_size=BATCH_SIZE, shuffle=True, pin_memory=True
+        dataset, batch_size=config.BATCH_SIZE, shuffle=True, pin_memory=True
     )
 
     return loader, dataset_len
@@ -67,8 +62,8 @@ def train_batch(
         input = cast(torch.Tensor, input)
         labels = cast(torch.Tensor, labels)
 
-        input = input.to(DEVICE, non_blocking=True)
-        labels = labels.to(DEVICE, non_blocking=True)
+        input = input.to(config.DEVICE, non_blocking=True)
+        labels = labels.to(config.DEVICE, non_blocking=True)
 
         pred = train_step(
             model, input, labels, optimizer, loss_function
@@ -94,13 +89,13 @@ def val_step(
 
 def print_performance(epoch: int, train_accurancy: float, val_accurancy: float) -> None:
     print(
-        f"Epoch {epoch + 1}/{EPOCHS}, Train Accurancy: {train_accurancy}, Val Accurancy: {val_accurancy}"
+        f"Epoch {epoch + 1}/{config.EPOCHS}, Train Accurancy: {train_accurancy}, Val Accurancy: {val_accurancy}"
     )
 
 
 def train() -> None:
     model = WineQualityClassifier()
-    model.to(DEVICE)
+    model.to(config.DEVICE)
 
     loss_function = torch.nn.functional.cross_entropy
     optimizer = torch.optim.Adam(
@@ -112,11 +107,11 @@ def train() -> None:
     train_loader, dataset_len = get_train_loader()
 
     val_input, val_labels = get_val_data()
-    val_input = val_input.to(DEVICE)
-    val_labels = val_labels.to(DEVICE)
+    val_input = val_input.to(config.DEVICE)
+    val_labels = val_labels.to(config.DEVICE)
 
     try:
-        for epoch in range(EPOCHS):
+        for epoch in range(config.EPOCHS):
             num_correct = train_batch(
                 model,
                 train_loader,
