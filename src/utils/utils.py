@@ -65,8 +65,12 @@ def save_model(model: torch.nn.Module, model_name: str):
 def load_model(model: torch.nn.Module, model_name: str):
     ensure_dir_exists(config.MODELS_DIR)
     model.load_state_dict(torch.load(
-        os.path.join(config.MODELS_DIR, f'{model_name}_{config.MODEL_VERSION}.pth'))
-    )
+        os.path.join(
+            config.MODELS_DIR,
+            f'{model_name}_{config.MODEL_VERSION}.pth'
+        ),
+        weights_only=True
+    ))
 
 
 def train_mode(model: torch.nn.Module) -> None:

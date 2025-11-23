@@ -21,10 +21,10 @@ def calculate_confusion_matrix(
         pred: torch.Tensor,
         labels: torch.Tensor
 ) -> tuple[int, int, int, int]:
-    true_positives = ((pred >= 0.5) & (labels == 1)).sum().item()
-    true_negatives = ((pred < 0.5) & (labels == 0)).sum().item()
-    false_positives = ((pred >= 0.5) & (labels == 0)).sum().item()
-    false_negatives = ((pred < 0.5) & (labels == 1)).sum().item()
+    true_positives = ((pred == 1) & (labels == 1)).sum().item()
+    true_negatives = ((pred == 0) & (labels == 0)).sum().item()
+    false_positives = ((pred == 1) & (labels == 0)).sum().item()
+    false_negatives = ((pred == 0) & (labels == 1)).sum().item()
 
     return true_positives, true_negatives, false_positives, false_negatives
 
@@ -73,7 +73,7 @@ def evaluate():
     pred = test_step(model, test_input)
     num_correct = (pred == test_labels).sum().item()
 
-    accurancy = utils.calculate_accuracy(num_correct, dataset_len)
+    accuracy = utils.calculate_accuracy(num_correct, dataset_len)
     true_positives, true_negatives, false_positives, false_negatives = calculate_confusion_matrix(
         pred, test_labels
     )
@@ -85,4 +85,4 @@ def evaluate():
             true_positives, true_negatives, false_positives, false_negatives
         )
     )
-    print_accuracy(accurancy)
+    print_accuracy(accuracy)

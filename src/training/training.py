@@ -87,9 +87,9 @@ def val_step(
     return num_correct
 
 
-def print_performance(epoch: int, train_accurancy: float, val_accurancy: float) -> None:
+def print_performance(epoch: int, train_accuracy: float, val_accuracy: float) -> None:
     print(
-        f"Epoch {epoch + 1}/{config.EPOCHS}, Train Accurancy: {train_accurancy}, Val Accurancy: {val_accurancy}"
+        f"Epoch {epoch + 1}/{config.EPOCHS}, Train Accuracy: {train_accuracy}, Val Accuracy: {val_accuracy}"
     )
 
 
@@ -125,14 +125,14 @@ def train() -> None:
                 val_labels
             )
 
-            train_accurancy = utils.calculate_accuracy(
+            train_accuracy = utils.calculate_accuracy(
                 num_correct, dataset_len
             )
-            val_accurancy = utils.calculate_accuracy(
+            val_accuracy = utils.calculate_accuracy(
                 val_correct, val_input.shape[0]
             )
 
-            print_performance(epoch, train_accurancy, val_accurancy)
+            print_performance(epoch, train_accuracy, val_accuracy)
 
     except KeyboardInterrupt:
         print("Training interrupted")

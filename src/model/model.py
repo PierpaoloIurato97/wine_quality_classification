@@ -7,11 +7,11 @@ class WineQualityClassifier(torch.nn.Module):
 
         self.layers = torch.nn.Sequential(
             torch.nn.Linear(11, 33),
-            torch.nn.BatchNorm1d(33),
+            torch.nn.LayerNorm(33),
             torch.nn.ReLU(),
             torch.nn.Dropout(0.1),
             torch.nn.Linear(33, 11),
-            torch.nn.BatchNorm1d(11),
+            torch.nn.LayerNorm(11),
             torch.nn.ReLU(),
             torch.nn.Dropout(0.1),
             torch.nn.Linear(11, 2),
