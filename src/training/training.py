@@ -4,7 +4,7 @@ import torch
 
 import config
 import utils
-from models import WineQualityClassifier
+from model import WineQualityClassifier
 
 
 def get_train_loader() -> tuple[torch.utils.data.DataLoader, int]:
