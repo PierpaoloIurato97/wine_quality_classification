@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import torch
 
+import config
 import utils
 from models import WineQualityClassifier
 
@@ -61,8 +62,12 @@ def print_accuracy(accuracy: float) -> None:
 def evaluate():
     model = WineQualityClassifier()
     utils.load_model(model, 'wine_quality_model')
+    model = model.to(config.DEVICE)
 
     test_input, test_labels = get_test_data()
+    test_input = test_input.to(config.DEVICE)
+    test_labels = test_labels.to(config.DEVICE)
+
     dataset_len = test_input.shape[0]
 
     pred = test_step(model, test_input)

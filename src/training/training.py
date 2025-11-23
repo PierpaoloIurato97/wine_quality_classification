@@ -95,7 +95,7 @@ def print_performance(epoch: int, train_accurancy: float, val_accurancy: float) 
 
 def train() -> None:
     model = WineQualityClassifier()
-    model.to(config.DEVICE)
+    model = model.to(config.DEVICE)
 
     loss_function = torch.nn.functional.cross_entropy
     optimizer = torch.optim.Adam(
