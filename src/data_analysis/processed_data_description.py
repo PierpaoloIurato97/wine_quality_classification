@@ -54,7 +54,7 @@ def describe_processed_data():
 
     utils.make_plot(
         title='Processed Wine Label Distribution',
-        xlabel=config.LABEL,
+        xlabel='Label',
         ylabel='Frequency',
         file_name='wine_label_distribution',
         plot=lambda: plot_class_distribution(df)
