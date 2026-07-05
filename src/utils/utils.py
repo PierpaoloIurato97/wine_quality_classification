@@ -89,7 +89,7 @@ def split_df_for_inference(df: pd.DataFrame) -> tuple[torch.Tensor, torch.Tensor
     ).float()
     labels = torch.from_numpy(
         df[config.LABEL].to_numpy()
-    ).float()
+    ).long()
 
     return input, labels
 

@@ -13,8 +13,9 @@ def get_test_data() -> tuple[torch.Tensor, torch.Tensor]:
 
 def test_step(model: WineQualityClassifier, input: torch.Tensor) -> torch.Tensor:
     utils.eval_mode(model)
-    pred = model.forward(input).argmax(dim=1)
-    return pred
+    with torch.no_grad():
+        pred = model.forward(input)
+    return pred.argmax(dim=1)
 
 
 def calculate_confusion_matrix(
@@ -30,10 +31,10 @@ def calculate_confusion_matrix(
 
 
 def plot_confusion_matrix(
-        true_positives: torch.types.Number,
-        true_negatives: torch.types.Number,
-        false_positives: torch.types.Number,
-        false_negatives: torch.types.Number
+        true_positives: int,
+        true_negatives: int,
+        false_positives: int,
+        false_negatives: int
 ) -> None:
     cm = [[true_positives, false_negatives],
           [false_positives, true_negatives]]
