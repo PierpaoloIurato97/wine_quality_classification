@@ -45,8 +45,6 @@ def train_step(
     loss.backward()
     optimizer.step()
 
-    pred = pred.argmax(dim=1)
-
     return pred
 
 
@@ -69,7 +67,7 @@ def train_batch(
             model, input, labels, optimizer, loss_function
         )
 
-        num_correct += (pred == labels).sum().item()
+        num_correct += (pred.argmax(dim=1) == labels).sum().item()
 
     return num_correct
 
@@ -81,8 +79,8 @@ def val_step(
 ) -> int:
     utils.eval_mode(model)
 
-    pred = model.forward(input).argmax(dim=1)
-    num_correct = (pred == labels).sum().item()
+    pred = model.forward(input)
+    num_correct = (pred.argmax(dim=1) == labels).sum().item()
 
     return num_correct
 
@@ -101,6 +99,7 @@ def train() -> None:
     optimizer = torch.optim.Adam(
         model.parameters(),
         lr=0.001,
+        betas=(0.9, 0.999),
         weight_decay=1e-4
     )
 
