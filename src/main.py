@@ -2,7 +2,7 @@ import argparse
 
 from data_analysis import describe_processed_data, describe_raw_data
 from evaluation import evaluate
-from preprocessing import add_label_var, split, standardize
+from preprocessing import add_label_var, remove_outliers, split, standardize
 from training import train
 
 
@@ -12,10 +12,11 @@ def parse_args():
         "--action",
         choices=[
             "describe_raw_data",
+            "remove_outliers",
             "add_label_var",
+            "split",
             "standardize",
             "describe_processed_data",
-            "split",
             "train",
             "evaluate"
         ],
@@ -32,12 +33,14 @@ if __name__ == "__main__":
         describe_raw_data()
     elif args.action == "describe_processed_data":
         describe_processed_data()
+    elif args.action == "remove_outliers":
+        remove_outliers()
     elif args.action == "add_label_var":
         add_label_var()
-    elif args.action == "split":
-        split()
     elif args.action == "standardize":
         standardize()
+    elif args.action == "split":
+        split()
     elif args.action == "train":
         train()
     elif args.action == "evaluate":
