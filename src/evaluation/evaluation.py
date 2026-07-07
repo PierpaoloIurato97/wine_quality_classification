@@ -12,7 +12,7 @@ def get_test_data() -> tuple[torch.Tensor, torch.Tensor]:
 
 
 def test_step(model: WineQualityClassifier, input: torch.Tensor) -> torch.Tensor:
-    utils.eval_mode(model)
+    model.eval()
     with torch.no_grad():
         pred = model.forward(input)
     return pred.argmax(dim=1)

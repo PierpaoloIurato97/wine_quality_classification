@@ -34,10 +34,10 @@ def train_step(
     model: WineQualityClassifier,
     input: torch.Tensor,
     labels: torch.Tensor,
-    optimizer: torch.optim.Adam,
+    optimizer: torch.optim.SGD,
     loss_function: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
 ) -> torch.Tensor:
-    utils.train_mode(model)
+    model.train()
 
     optimizer.zero_grad()
     pred = model.forward(input)
@@ -51,7 +51,7 @@ def train_step(
 def train_batch(
     model: WineQualityClassifier,
     loader: torch.utils.data.DataLoader,
-    optimizer: torch.optim.Adam,
+    optimizer: torch.optim.SGD,
     loss_function: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
 ) -> int:
     num_correct = 0
@@ -69,7 +69,7 @@ def train_batch(
 
         num_correct += (pred.argmax(dim=1) == labels).sum().item()
 
-    return num_correct
+    return int(num_correct)
 
 
 def val_step(
@@ -77,12 +77,13 @@ def val_step(
     input: torch.Tensor,
     labels: torch.Tensor,
 ) -> int:
-    utils.eval_mode(model)
+    model.eval()
 
-    pred = model.forward(input)
-    num_correct = (pred.argmax(dim=1) == labels).sum().item()
+    with torch.no_grad():
+        pred = model.forward(input)
+        num_correct = (pred.argmax(dim=1) == labels).sum().item()
 
-    return num_correct
+    return int(num_correct)
 
 
 def print_performance(epoch: int, train_accuracy: float, val_accuracy: float) -> None:
@@ -98,9 +99,9 @@ def train() -> None:
     loss_function = torch.nn.functional.cross_entropy
     optimizer = torch.optim.Adam(
         model.parameters(),
-        lr=0.001,
-        betas=(0.9, 0.999),
-        weight_decay=1e-4
+        lr=config.LEARNING_RATE,
+        betas=config.ADAM_BETAS,
+        weight_decay=config.WEIGHT_DECAY
     )
 
     train_loader, dataset_len = get_train_loader()
@@ -108,6 +109,9 @@ def train() -> None:
     val_input, val_labels = get_val_data()
     val_input = val_input.to(config.DEVICE)
     val_labels = val_labels.to(config.DEVICE)
+
+    best_val_accuracy = 0.0
+    epochs_without_improvement = 0
 
     try:
         for epoch in range(config.EPOCHS):
@@ -133,8 +137,23 @@ def train() -> None:
 
             print_performance(epoch, train_accuracy, val_accuracy)
 
+            if val_accuracy > best_val_accuracy:
+                best_val_accuracy = val_accuracy
+                epochs_without_improvement = 0
+                utils.save_model(model, 'wine_quality_model')
+            else:
+                epochs_without_improvement += 1
+
+            if (
+                config.EARLY_STOPPING_ENABLED
+                and best_val_accuracy >= config.EARLY_STOPPING_MIN_ACCURACY
+                and epochs_without_improvement >= config.EARLY_STOPPING_PATIENCE
+            ):
+                print(
+                    f"Early stopping at epoch {epoch + 1} (best Val Accuracy: {best_val_accuracy})")
+                break
+
     except KeyboardInterrupt:
         print("Training interrupted")
     finally:
-        print("Saving model...")
-        utils.save_model(model, 'wine_quality_model')
+        print(f"Best Val Accuracy: {best_val_accuracy}")

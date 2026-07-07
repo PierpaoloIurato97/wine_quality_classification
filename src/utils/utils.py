@@ -73,19 +73,9 @@ def load_model(model: torch.nn.Module, model_name: str):
     ))
 
 
-def train_mode(model: torch.nn.Module) -> None:
-    torch.set_grad_enabled(True)
-    model.train()
-
-
-def eval_mode(model: torch.nn.Module) -> None:
-    torch.set_grad_enabled(False)
-    model.eval()
-
-
 def split_df_for_inference(df: pd.DataFrame) -> tuple[torch.Tensor, torch.Tensor]:
     input = torch.from_numpy(
-        df.drop(columns=[config.LABEL]).to_numpy()
+        df[config.FEATURES].to_numpy()
     ).float()
     labels = torch.from_numpy(
         df[config.LABEL].to_numpy()
@@ -95,4 +85,4 @@ def split_df_for_inference(df: pd.DataFrame) -> tuple[torch.Tensor, torch.Tensor
 
 
 def calculate_accuracy(num_correct: int, dataset_len: int) -> float:
-    return round(num_correct / dataset_len, 2)
+    return round(num_correct / dataset_len, 4)

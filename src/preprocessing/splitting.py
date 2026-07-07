@@ -5,7 +5,7 @@ import utils
 
 
 def shuffle(df: pd.DataFrame):
-    return df.sample(frac=1, random_state=42).reset_index(drop=True)
+    return df.sample(frac=1, random_state=config.RANDOM_STATE).reset_index(drop=True)
 
 
 def split_df(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -21,7 +21,7 @@ def split_df(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame
 
 
 def split():
-    df = utils.read_csv("winequality-red-with-label-standardized")
+    df = utils.read_csv("winequality-red-with-label")
 
     df = shuffle(df)
     train_df, validation_df, test_df = split_df(df)
