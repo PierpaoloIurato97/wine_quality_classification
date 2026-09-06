@@ -1,11 +1,13 @@
-import pandas as pd
 from typing import cast
+
+import pandas as pd
+
 import config
 import utils
 
 
 def remove_outliers() -> None:
-    df = utils.read_csv('winequality-red')
+    df = utils.read_csv("winequality-red")
 
     rows_before = len(df)
 
@@ -20,5 +22,4 @@ def remove_outliers() -> None:
     print(f"Righe dopo il filtraggio:   {rows_after}")
     print(f"Righe rimosse:              {removed} ({removed / rows_before * 100:.1f}%)")
 
-    utils.save_csv(df, 'winequality-red-filtered')
-
+    utils.save_csv(df, "winequality-red-filtered")
