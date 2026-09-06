@@ -22,7 +22,7 @@ def mark_outliers(df: pd.DataFrame) -> pd.Series:
 
 def build_stratify_key(df: pd.DataFrame) -> np.ndarray:
     is_outlier = mark_outliers(df).astype(int)
-    return (df[config.LABEL].astype(str) + '_' + is_outlier.astype(str)).to_numpy()
+    return (df[config.LABEL].astype(str) + "_" + is_outlier.astype(str)).to_numpy()
 
 
 def split():
@@ -32,10 +32,11 @@ def split():
 
     val_test_ratio = config.VALIDATION_RATIO + config.TEST_RATIO
     train_df, temp_df, _, temp_key = train_test_split(
-        df, stratify_key,
+        df,
+        stratify_key,
         test_size=val_test_ratio,
         random_state=config.RANDOM_STATE,
-        stratify=stratify_key
+        stratify=stratify_key,
     )
 
     temp_stratify_key = build_stratify_key(temp_df)
@@ -44,7 +45,7 @@ def split():
         temp_df,
         test_size=relative_test_ratio,
         random_state=config.RANDOM_STATE,
-        stratify=temp_stratify_key
+        stratify=temp_stratify_key,
     )
 
     train_df = train_df.reset_index(drop=True)
@@ -52,7 +53,7 @@ def split():
     test_df = test_df.reset_index(drop=True)
 
     print(f"Train: {len(train_df)}, Val: {len(val_df)}, Test: {len(test_df)}")
-    for name, split_df in [('Train', train_df), ('Val', val_df), ('Test', test_df)]:
+    for name, split_df in [("Train", train_df), ("Val", val_df), ("Test", test_df)]:
         key = build_stratify_key(split_df)
         unique, counts = np.unique(key, return_counts=True)
         dist = dict(zip(unique, counts))

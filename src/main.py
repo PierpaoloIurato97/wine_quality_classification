@@ -18,10 +18,10 @@ def parse_args():
             "standardize",
             "describe_processed_data",
             "train",
-            "evaluate"
+            "evaluate",
         ],
         required=True,
-        help="Azione da eseguire"
+        help="Azione da eseguire",
     )
     return parser.parse_args()
 

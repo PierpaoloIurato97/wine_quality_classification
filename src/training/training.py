@@ -1,4 +1,4 @@
-from typing import Callable, cast
+from typing import cast
 
 import torch
 
@@ -8,7 +8,7 @@ from model import WineQualityClassifier
 
 
 def get_train_loader() -> tuple[torch.utils.data.DataLoader, int]:
-    df = utils.read_csv("winequality-red-train")
+    df = utils.read_csv("winequality-red-train-standardized")
 
     input, labels = utils.split_df_for_inference(df)
     labels = labels.long()
@@ -26,7 +26,7 @@ def get_train_loader() -> tuple[torch.utils.data.DataLoader, int]:
 
 
 def get_val_data() -> tuple[torch.Tensor, torch.Tensor]:
-    df = utils.read_csv("winequality-red-validation")
+    df = utils.read_csv("winequality-red-validation-standardized")
     return utils.split_df_for_inference(df)
 
 
@@ -34,27 +34,26 @@ def train_step(
     model: WineQualityClassifier,
     input: torch.Tensor,
     labels: torch.Tensor,
-    optimizer: torch.optim.SGD,
-    loss_function: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
+    optimizer: torch.optim.Adam,
+    loss_function: torch.nn.CrossEntropyLoss,
 ) -> torch.Tensor:
     model.train()
 
     optimizer.zero_grad()
-    pred = model.forward(input)
-    loss = loss_function(pred, labels)
+    loss = loss_function(model(input), labels)
     loss.backward()
     optimizer.step()
 
-    return pred
+    return loss
 
 
 def train_batch(
     model: WineQualityClassifier,
     loader: torch.utils.data.DataLoader,
-    optimizer: torch.optim.SGD,
-    loss_function: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
-) -> int:
-    num_correct = 0
+    optimizer: torch.optim.Adam,
+    loss_function: torch.nn.CrossEntropyLoss,
+) -> float:
+    total_loss = 0.0
 
     for _, (input, labels) in enumerate(loader):
         input = cast(torch.Tensor, input)
@@ -63,97 +62,90 @@ def train_batch(
         input = input.to(config.DEVICE, non_blocking=True)
         labels = labels.to(config.DEVICE, non_blocking=True)
 
-        pred = train_step(
-            model, input, labels, optimizer, loss_function
-        )
+        loss = train_step(model, input, labels, optimizer, loss_function)
+        total_loss += loss.item()
 
-        num_correct += (pred.argmax(dim=1) == labels).sum().item()
-
-    return int(num_correct)
+    return total_loss / len(loader)
 
 
-def val_step(
+def val_loss(
     model: WineQualityClassifier,
     input: torch.Tensor,
     labels: torch.Tensor,
-) -> int:
+    loss_function: torch.nn.CrossEntropyLoss,
+) -> float:
     model.eval()
 
     with torch.no_grad():
-        pred = model.forward(input)
-        num_correct = (pred.argmax(dim=1) == labels).sum().item()
-
-    return int(num_correct)
+        return loss_function(model(input), labels).item()
 
 
-def print_performance(epoch: int, train_accuracy: float, val_accuracy: float) -> None:
+def print_performance(
+    epoch: int, train_loss: float, val_loss_value: float, lr: float
+) -> None:
     print(
-        f"Epoch {epoch + 1}/{config.EPOCHS}, Train Accuracy: {train_accuracy}, Val Accuracy: {val_accuracy}"
+        f"Epoch {epoch + 1}/{config.EPOCHS}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss_value:.4f}, LR: {lr:.6f}"
     )
+
+
+def compute_class_weights(loader: torch.utils.data.DataLoader) -> torch.Tensor:
+    class_counts = torch.zeros(2)
+    for _, labels in loader:
+        for c in range(2):
+            class_counts[c] += (labels == c).sum()
+    weights = class_counts.sum() / (2 * class_counts)
+    return weights
 
 
 def train() -> None:
     model = WineQualityClassifier()
     model = model.to(config.DEVICE)
 
-    loss_function = torch.nn.functional.cross_entropy
+    train_loader, dataset_len = get_train_loader()
+
+    class_weights = compute_class_weights(train_loader).to(config.DEVICE)
+    loss_function = torch.nn.CrossEntropyLoss(weight=class_weights)
+
     optimizer = torch.optim.Adam(
         model.parameters(),
         lr=config.LEARNING_RATE,
         betas=config.ADAM_BETAS,
-        weight_decay=config.WEIGHT_DECAY
+        weight_decay=config.WEIGHT_DECAY,
     )
-
-    train_loader, dataset_len = get_train_loader()
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer,
+        mode="min",
+        factor=config.LR_PLATEAU_FACTOR,
+        patience=config.LR_PLATEAU_PATIENCE,
+        min_lr=config.LR_MIN,
+    )
 
     val_input, val_labels = get_val_data()
     val_input = val_input.to(config.DEVICE)
     val_labels = val_labels.to(config.DEVICE)
 
-    best_val_accuracy = 0.0
-    epochs_without_improvement = 0
+    best_val_loss = float("inf")
+    best_epoch = 0
 
     try:
         for epoch in range(config.EPOCHS):
-            num_correct = train_batch(
-                model,
-                train_loader,
-                optimizer,
-                loss_function
+            train_loss = train_batch(model, train_loader, optimizer, loss_function)
+
+            val_loss_value = val_loss(model, val_input, val_labels, loss_function)
+
+            scheduler.step(val_loss_value)
+            print_performance(
+                epoch, train_loss, val_loss_value, optimizer.param_groups[0]["lr"]
             )
 
-            val_correct = val_step(
-                model,
-                val_input,
-                val_labels
-            )
-
-            train_accuracy = utils.calculate_accuracy(
-                num_correct, dataset_len
-            )
-            val_accuracy = utils.calculate_accuracy(
-                val_correct, val_input.shape[0]
-            )
-
-            print_performance(epoch, train_accuracy, val_accuracy)
-
-            if val_accuracy > best_val_accuracy:
-                best_val_accuracy = val_accuracy
-                epochs_without_improvement = 0
-                utils.save_model(model, 'wine_quality_model')
-            else:
-                epochs_without_improvement += 1
-
-            if (
-                config.EARLY_STOPPING_ENABLED
-                and best_val_accuracy >= config.EARLY_STOPPING_MIN_ACCURACY
-                and epochs_without_improvement >= config.EARLY_STOPPING_PATIENCE
-            ):
-                print(
-                    f"Early stopping at epoch {epoch + 1} (best Val Accuracy: {best_val_accuracy})")
-                break
+            if val_loss_value < best_val_loss:
+                best_val_loss = val_loss_value
+                best_epoch = epoch + 1
+                utils.save_model(model, "wine_quality_model")
 
     except KeyboardInterrupt:
         print("Training interrupted")
     finally:
-        print(f"Best Val Accuracy: {best_val_accuracy}")
+        print(
+            f"Best Val Loss: {best_val_loss:.4f} (Epoch {best_epoch}/{config.EPOCHS})"
+        )
