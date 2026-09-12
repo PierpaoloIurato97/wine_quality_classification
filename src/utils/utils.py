@@ -1,9 +1,10 @@
 import os
 from typing import Callable
 
+import joblib
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
-import torch
 
 import config
 
@@ -50,29 +51,25 @@ def save_plot(file_name: str):
     plt.close()
 
 
-def save_model(model: torch.nn.Module, model_name: str):
+def save_model(model, model_name: str):
     os.makedirs(config.MODELS_DIR, exist_ok=True)
-    torch.save(
-        model.state_dict(),
-        os.path.join(config.MODELS_DIR, f"{model_name}_{config.MODEL_VERSION}.pth"),
+    joblib.dump(
+        model,
+        os.path.join(config.MODELS_DIR, f"{model_name}_{config.MODEL_VERSION}.joblib"),
     )
 
 
-def load_model(model: torch.nn.Module, model_name: str):
+def load_model(model_name: str):
     ensure_dir_exists(config.MODELS_DIR)
-    model.load_state_dict(
-        torch.load(
-            os.path.join(config.MODELS_DIR, f"{model_name}_{config.MODEL_VERSION}.pth"),
-            weights_only=True,
-        )
+    return joblib.load(
+        os.path.join(config.MODELS_DIR, f"{model_name}_{config.MODEL_VERSION}.joblib"),
     )
 
 
-def split_df_for_inference(df: pd.DataFrame) -> tuple[torch.Tensor, torch.Tensor]:
-    input = torch.from_numpy(df[config.FEATURES].to_numpy()).float()
-    labels = torch.from_numpy(df[config.LABEL].to_numpy()).long()
-
-    return input, labels
+def split_df(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
+    X = df[config.FEATURES].to_numpy().astype(np.float64)
+    y = df[config.LABEL].to_numpy().astype(int)
+    return X, y
 
 
 def calculate_accuracy(num_correct: int, dataset_len: int) -> float:

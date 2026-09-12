@@ -1,151 +1,93 @@
-from typing import cast
+import itertools
+from typing import Literal
 
-import torch
+import numpy as np
 
 import config
 import utils
 from model import WineQualityClassifier
 
 
-def get_train_loader() -> tuple[torch.utils.data.DataLoader, int]:
-    df = utils.read_csv("winequality-red-train-standardized")
-
-    input, labels = utils.split_df_for_inference(df)
-    labels = labels.long()
-
-    dataset_len = input.shape[0]
-
-    dataset: torch.utils.data.TensorDataset = torch.utils.data.TensorDataset(
-        input, labels
-    )
-    loader: torch.utils.data.DataLoader = torch.utils.data.DataLoader(
-        dataset, batch_size=config.BATCH_SIZE, shuffle=True, pin_memory=True
-    )
-
-    return loader, dataset_len
-
-
-def get_val_data() -> tuple[torch.Tensor, torch.Tensor]:
-    df = utils.read_csv("winequality-red-validation-standardized")
-    return utils.split_df_for_inference(df)
-
-
-def train_step(
-    model: WineQualityClassifier,
-    input: torch.Tensor,
-    labels: torch.Tensor,
-    optimizer: torch.optim.Adam,
-    loss_function: torch.nn.CrossEntropyLoss,
-) -> torch.Tensor:
-    model.train()
-
-    optimizer.zero_grad()
-    loss = loss_function(model(input), labels)
-    loss.backward()
-    optimizer.step()
-
-    return loss
-
-
-def train_batch(
-    model: WineQualityClassifier,
-    loader: torch.utils.data.DataLoader,
-    optimizer: torch.optim.Adam,
-    loss_function: torch.nn.CrossEntropyLoss,
+def evaluate_accuracy(
+    model: WineQualityClassifier, X: np.ndarray, y: np.ndarray
 ) -> float:
-    total_loss = 0.0
-
-    for _, (input, labels) in enumerate(loader):
-        input = cast(torch.Tensor, input)
-        labels = cast(torch.Tensor, labels)
-
-        input = input.to(config.DEVICE, non_blocking=True)
-        labels = labels.to(config.DEVICE, non_blocking=True)
-
-        loss = train_step(model, input, labels, optimizer, loss_function)
-        total_loss += loss.item()
-
-    return total_loss / len(loader)
+    """Calcola l'accuracy del modello."""
+    pred = model.predict(X)
+    return float((pred == y).sum() / len(y))
 
 
-def val_loss(
-    model: WineQualityClassifier,
-    input: torch.Tensor,
-    labels: torch.Tensor,
-    loss_function: torch.nn.CrossEntropyLoss,
-) -> float:
-    model.eval()
+def grid_search(
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    X_val: np.ndarray,
+    y_val: np.ndarray,
+) -> WineQualityClassifier:
+    """Cerca la migliore combinazione di iperparametri sul validation set."""
+    C_values = [1.0, 5.0, 10.0, 50.0, 100.0, 200.0, 500.0, 1000.0, 2000.0, 5000.0]
+    gamma_values: list[float | Literal["auto", "scale"]] = [
+        "scale",
+        0.001,
+        0.003,
+        0.005,
+        0.008,
+        0.01,
+        0.015,
+        0.02,
+        0.03,
+        0.05,
+    ]
 
-    with torch.no_grad():
-        return loss_function(model(input), labels).item()
+    best_accuracy = 0.0
+    best_params: dict = {}
+    best_model: WineQualityClassifier | None = None
 
+    combinations = list(itertools.product(C_values, gamma_values))
+    total = len(combinations)
 
-def print_performance(
-    epoch: int, train_loss: float, val_loss_value: float, lr: float
-) -> None:
-    print(
-        f"Epoch {epoch + 1}/{config.EPOCHS}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss_value:.4f}, LR: {lr:.6f}"
-    )
+    for i, (C, gamma) in enumerate(combinations, 1):
+        try:
+            model = WineQualityClassifier()
+            model.fit(X_train, y_train, C=C, gamma=gamma, verbose=False)
 
+            accuracy = evaluate_accuracy(model, X_val, y_val)
 
-def compute_class_weights(loader: torch.utils.data.DataLoader) -> torch.Tensor:
-    class_counts = torch.zeros(2)
-    for _, labels in loader:
-        for c in range(2):
-            class_counts[c] += (labels == c).sum()
-    weights = class_counts.sum() / (2 * class_counts)
-    return weights
+            if accuracy > best_accuracy:
+                best_accuracy = accuracy
+                best_params = {"C": C, "GAMMA": gamma}
+                best_model = model
+                print(
+                    f"[{i}/{total}] Nuova migliore: "
+                    f"accuracy={accuracy:.4f} | "
+                    f"C={C}, gamma={gamma}"
+                )
+        except Exception:
+            continue
+
+    print(f"\nMigliori iperparametri: {best_params}")
+    print(f"Migliore validation accuracy: {best_accuracy * 100:.2f}%")
+
+    if best_model is None:
+        raise RuntimeError("Nessuna combinazione di iperparametri ha funzionato.")
+
+    return best_model
 
 
 def train() -> None:
-    model = WineQualityClassifier()
-    model = model.to(config.DEVICE)
+    # Carica dati di training
+    df_train = utils.read_csv("winequality-red-train-standardized")
+    X_train, y_train = utils.split_df(df_train)
 
-    train_loader, dataset_len = get_train_loader()
-
-    class_weights = compute_class_weights(train_loader).to(config.DEVICE)
-    loss_function = torch.nn.CrossEntropyLoss(weight=class_weights)
-
-    optimizer = torch.optim.Adam(
-        model.parameters(),
-        lr=config.LEARNING_RATE,
-        betas=config.ADAM_BETAS,
-        weight_decay=config.WEIGHT_DECAY,
-    )
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer,
-        mode="min",
-        factor=config.LR_PLATEAU_FACTOR,
-        patience=config.LR_PLATEAU_PATIENCE,
-        min_lr=config.LR_MIN,
+    print(
+        f"Vini buoni: {(y_train == 1).sum()} | " f"Vini cattivi: {(y_train == 0).sum()}"
     )
 
-    val_input, val_labels = get_val_data()
-    val_input = val_input.to(config.DEVICE)
-    val_labels = val_labels.to(config.DEVICE)
+    # Carica dati di validazione per il grid search
+    df_val = utils.read_csv("winequality-red-validation-standardized")
+    X_val, y_val = utils.split_df(df_val)
 
-    best_val_loss = float("inf")
-    best_epoch = 0
+    n_comb = 10 * 10
+    print(f"Grid search su {n_comb} combinazioni di iperparametri...\n")
+    model = grid_search(X_train, y_train, X_val, y_val)
 
-    try:
-        for epoch in range(config.EPOCHS):
-            train_loss = train_batch(model, train_loader, optimizer, loss_function)
-
-            val_loss_value = val_loss(model, val_input, val_labels, loss_function)
-
-            scheduler.step(val_loss_value)
-            print_performance(
-                epoch, train_loss, val_loss_value, optimizer.param_groups[0]["lr"]
-            )
-
-            if val_loss_value < best_val_loss:
-                best_val_loss = val_loss_value
-                best_epoch = epoch + 1
-                utils.save_model(model, "wine_quality_model")
-
-    except KeyboardInterrupt:
-        print("Training interrupted")
-    finally:
-        print(
-            f"Best Val Loss: {best_val_loss:.4f} (Epoch {best_epoch}/{config.EPOCHS})"
-        )
+    utils.save_model(model, "wine_quality_model")
+    print("Modello salvato.")

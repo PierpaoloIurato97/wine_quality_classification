@@ -1,30 +1,23 @@
 import matplotlib.pyplot as plt
-import torch
+import numpy as np
 
 import config
 import utils
 from model import WineQualityClassifier
 
 
-def get_data(split: str) -> tuple[torch.Tensor, torch.Tensor]:
+def get_data(split: str) -> tuple[np.ndarray, np.ndarray]:
     df = utils.read_csv(f"winequality-red-{split}-standardized")
-    return utils.split_df_for_inference(df)
-
-
-def test_step(model: WineQualityClassifier, input: torch.Tensor) -> torch.Tensor:
-    model.eval()
-    with torch.no_grad():
-        pred = model.forward(input)
-    return pred.argmax(dim=1)
+    return utils.split_df(df)
 
 
 def calculate_confusion_matrix(
-    pred: torch.Tensor, labels: torch.Tensor
+    pred: np.ndarray, labels: np.ndarray
 ) -> tuple[int, int, int, int]:
-    true_positives = int(((pred == 1) & (labels == 1)).sum().item())
-    true_negatives = int(((pred == 0) & (labels == 0)).sum().item())
-    false_positives = int(((pred == 1) & (labels == 0)).sum().item())
-    false_negatives = int(((pred == 0) & (labels == 1)).sum().item())
+    true_positives = int(((pred == 1) & (labels == 1)).sum())
+    true_negatives = int(((pred == 0) & (labels == 0)).sum())
+    false_positives = int(((pred == 1) & (labels == 0)).sum())
+    false_negatives = int(((pred == 0) & (labels == 1)).sum())
 
     return true_positives, true_negatives, false_positives, false_negatives
 
@@ -57,16 +50,14 @@ def print_accuracy(split: str, accuracy: float) -> None:
 
 
 def evaluate_split(model: WineQualityClassifier, split: str) -> None:
-    input, labels = get_data(split)
-    input = input.to(config.DEVICE)
-    labels = labels.to(config.DEVICE)
+    X, y = get_data(split)
 
-    pred = test_step(model, input)
-    num_correct = int((pred == labels).sum().item())
+    pred = model.predict(X)
+    num_correct = int((pred == y).sum())
 
-    accuracy = utils.calculate_accuracy(num_correct, input.shape[0])
+    accuracy = utils.calculate_accuracy(num_correct, X.shape[0])
     true_positives, true_negatives, false_positives, false_negatives = (
-        calculate_confusion_matrix(pred, labels)
+        calculate_confusion_matrix(pred, y)
     )
 
     title = f"Confusion Matrix - {split.capitalize()}"
@@ -81,9 +72,7 @@ def evaluate_split(model: WineQualityClassifier, split: str) -> None:
 
 
 def evaluate():
-    model = WineQualityClassifier()
-    utils.load_model(model, "wine_quality_model")
-    model = model.to(config.DEVICE)
+    model = utils.load_model("wine_quality_model")
 
     for split in ["train", "validation", "test"]:
         evaluate_split(model, split)

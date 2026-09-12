@@ -1,26 +1,35 @@
-import torch
+from typing import Literal
+
+import numpy as np
+from sklearn.svm import SVC
 
 import config
 
 
-class WineQualityClassifier(torch.nn.Module):
+class WineQualityClassifier:
     def __init__(self):
-        super().__init__()
+        self.model: SVC | None = None
 
-        self.layers = torch.nn.Sequential(
-            torch.nn.Linear(len(config.FEATURES), 64),
-            torch.nn.BatchNorm1d(64),
-            torch.nn.Sigmoid(),
-            torch.nn.Linear(64, 32),
-            torch.nn.BatchNorm1d(32),
-            torch.nn.Sigmoid(),
-            torch.nn.Linear(32, 2),
+    def fit(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        C: float = config.SVM_C,
+        gamma: float | Literal["auto", "scale"] = config.SVM_GAMMA,
+        verbose: bool = True,
+    ) -> None:
+        """Addestra il modello SVC con kernel RBF."""
+        self.model = SVC(
+            kernel="rbf",
+            C=C,
+            gamma=gamma,
         )
+        self.model.fit(X, y)
+        if verbose:
+            print(f"Support vectors: {self.model.n_support_} (per classe)")
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if x.shape[0] < 1 or x.shape[1] != len(config.FEATURES):
-            raise ValueError(
-                f"Input tensor must have shape (N, {len(config.FEATURES)}) where N >= 1."
-            )
-
-        return self.layers(x)
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        """Predice la qualità."""
+        if self.model is None:
+            raise RuntimeError("Il modello non è stato addestrato.")
+        return self.model.predict(X)
