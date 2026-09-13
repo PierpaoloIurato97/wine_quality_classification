@@ -9,12 +9,24 @@ import utils
 
 
 def plot_class_distribution(df: pd.DataFrame):
+    """
+    Plots a histogram of the binary label across the full processed dataset.
+
+    Gives an immediate visual check of class imbalance, which directly
+    affects model bias and the interpretation of accuracy as a metric.
+    """
     plt.hist(df[config.LABEL], bins=2, edgecolor="black")
 
 
 def plot_split_class_distribution(
     train_df: pd.DataFrame, val_df: pd.DataFrame, test_df: pd.DataFrame
 ):
+    """
+    Produces a grouped bar chart comparing the class counts in each split.
+
+    Verifies that the stratified split preserved the class ratio across train,
+    validation, and test sets, which is a prerequisite for unbiased evaluation.
+    """
     datasets = {"Train": train_df, "Validation": val_df, "Test": test_df}
     labels = list(datasets.keys())
     count_0 = [(df[config.LABEL] == 0).sum() for df in datasets.values()]
@@ -66,6 +78,13 @@ def plot_split_class_distribution(
 
 
 def plot_correlation(df: pd.DataFrame):
+    """
+    Renders a colour-coded correlation heatmap for all features and the binary
+    label in the processed dataset.
+
+    Complements the raw-data correlation plot to check whether the binarisation
+    of the quality score changes which features are most predictive.
+    """
     cols = config.FEATURES + [config.LABEL]
     subset: pd.DataFrame = cast(pd.DataFrame, df[cols])
     corr = subset.corr()
@@ -88,6 +107,13 @@ def plot_correlation(df: pd.DataFrame):
 
 
 def plot_feature_vs_label(df: pd.DataFrame):
+    """
+    Plots each feature against the binary label with vertical jitter.
+
+    Allows a visual sanity check that the binarisation decision boundary
+    separates the two classes in a way that is consistent with each feature's
+    distribution.
+    """
     num_features = len(config.FEATURES)
     num_cols = 3
     num_rows = (num_features + num_cols - 1) // num_cols
@@ -121,6 +147,14 @@ def plot_feature_vs_label(df: pd.DataFrame):
 
 
 def describe_processed_data():
+    """
+    Entry point for the processed-data analysis stage of the pipeline.
+
+    Loads all three splits, concatenates them for aggregate statistics, and
+    generates plots that summarise the final preprocessed dataset. Running
+    this after the full preprocessing sequence confirms that the data is
+    clean and balanced before training begins.
+    """
     train_df = utils.read_csv("winequality-red-train")
     val_df = utils.read_csv("winequality-red-validation")
     test_df = utils.read_csv("winequality-red-test")

@@ -7,6 +7,13 @@ import utils
 
 
 def plot_feature_vs_quality(df: pd.DataFrame):
+    """
+    Produces a scatter plot grid showing each feature against the raw quality
+    score with vertical jitter to reduce overplotting.
+
+    Helps identify which features have a visible linear or monotonic
+    relationship with quality before the binary label is introduced.
+    """
     num_features = len(config.FEATURES)
     num_cols = 3
     num_rows = (num_features + num_cols - 1) // num_cols
@@ -37,6 +44,13 @@ def plot_feature_vs_quality(df: pd.DataFrame):
 
 
 def plot_correlation(df: pd.DataFrame):
+    """
+    Renders a colour-coded correlation heatmap for all features and the raw
+    quality score.
+
+    Highlights multicollinearity between features and quantifies how strongly
+    each feature correlates with the target variable in the raw dataset.
+    """
     cols = config.FEATURES + ["quality"]
     corr = pd.DataFrame(df[cols]).corr()
 
@@ -58,6 +72,13 @@ def plot_correlation(df: pd.DataFrame):
 
 
 def plot_feature_distribution(df: pd.DataFrame):
+    """
+    Plots a histogram for each feature so that their distributions can be
+    inspected before any preprocessing is applied.
+
+    Reveals skewness, multimodality, or unusual concentrations of values that
+    may warrant further cleaning or transformation steps.
+    """
     num_features = len(config.FEATURES)
     num_cols = 3
     num_rows = (num_features + num_cols - 1) // num_cols
@@ -83,6 +104,14 @@ def plot_feature_distribution(df: pd.DataFrame):
 
 
 def describe_raw_data():
+    """
+    Entry point for the raw-data analysis stage of the pipeline.
+
+    Computes and prints descriptive statistics and generates exploratory plots
+    for the unmodified dataset. Running this before preprocessing gives
+    baseline insight into data quality, distributions, and feature-target
+    relationships.
+    """
     df = utils.read_csv("winequality-red")
 
     utils.ensure_col_exists(df, "quality")

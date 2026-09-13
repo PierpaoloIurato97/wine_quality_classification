@@ -7,6 +7,13 @@ import utils
 
 
 def mark_outliers(df: pd.DataFrame) -> pd.Series:
+    """
+    Identifies statistical outliers in the dataset using the IQR method.
+
+    Used as a helper to build a stratification key before splitting, so that
+    the rare outlier samples are distributed proportionally across splits
+    rather than accidentally concentrating in one of them.
+    """
     is_outlier = pd.Series(False, index=df.index)
 
     for feature in config.FEATURES:
@@ -21,11 +28,27 @@ def mark_outliers(df: pd.DataFrame) -> pd.Series:
 
 
 def build_stratify_key(df: pd.DataFrame) -> np.ndarray:
+    """
+    Builds a composite stratification key that combines the class label and
+    outlier status of each sample.
+
+    Using both dimensions ensures that the train/val/test split preserves not
+    only the class balance but also the proportion of outlier samples, which
+    would otherwise be too rare to appear consistently in all splits.
+    """
     is_outlier = mark_outliers(df).astype(int)
     return (df[config.LABEL].astype(str) + "_" + is_outlier.astype(str)).to_numpy()
 
 
 def split():
+    """
+    Third preprocessing step in the pipeline.
+
+    Splits the labelled dataset into train, validation, and test sets according
+    to the ratios in config. The split is stratified on both the class label
+    and outlier status to guarantee a representative distribution in every
+    split, which is critical for reliable model evaluation.
+    """
     df = utils.read_csv("winequality-red-with-label")
 
     stratify_key = build_stratify_key(df)

@@ -7,6 +7,13 @@ from training import train
 
 
 def parse_args():
+    """
+    Parses the --action CLI argument that selects which pipeline stage to run.
+
+    Keeping argument parsing in its own function makes main() readable and
+    makes it easy to add new flags in the future without restructuring the
+    entry-point logic.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--action",
