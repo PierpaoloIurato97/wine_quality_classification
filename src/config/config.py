@@ -21,8 +21,6 @@ FEATURES = [
 LABEL = "label"
 QUALITY_THRESHOLD = 5
 RANDOM_STATE = 42
-SVM_C = 1.0
-SVM_GAMMA = "scale"
 PLAUSIBLE_RANGES = {
     "fixed acidity": (3.0, 16.0),
     "volatile acidity": (0.0, 1.2),
