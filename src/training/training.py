@@ -20,18 +20,7 @@ def grid_search(
     y_val: np.ndarray,
 ) -> WineQualityClassifier:
     C_values = [1.0, 5.0, 10.0, 50.0, 100.0, 200.0, 500.0, 1000.0, 2000.0, 5000.0]
-    gamma_values: list[float] = [
-        0.001,
-        0.003,
-        0.005,
-        0.008,
-        0.01,
-        0.015,
-        0.02,
-        0.03,
-        0.05,
-        0.07,
-    ]
+    gamma_values = [0.001, 0.003, 0.005, 0.008, 0.01, 0.015, 0.02, 0.03, 0.05, 0.07]
 
     best_accuracy = 0.0
     best_params: dict = {}
