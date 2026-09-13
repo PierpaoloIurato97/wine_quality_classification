@@ -7,42 +7,6 @@ import utils
 
 
 def plot_feature_vs_quality(df: pd.DataFrame):
-    quality_values = sorted(df["quality"].unique())
-    num_features = len(config.FEATURES)
-    num_cols = 3
-    num_rows = (num_features + num_cols - 1) // num_cols
-
-    _, axes = plt.subplots(
-        num_rows,
-        num_cols,
-        figsize=(num_cols * 4, num_rows * 3),
-        constrained_layout=True,
-    )
-
-    groups = [df[df["quality"] == q] for q in quality_values]
-
-    for i, feature in enumerate(config.FEATURES):
-        r, c = divmod(i, num_cols)
-        ax = axes[r, c]
-
-        bp = ax.boxplot(
-            [g[feature] for g in groups],
-            labels=[str(q) for q in quality_values],
-            patch_artist=True,
-        )
-
-        for box in bp["boxes"]:
-            box.set_alpha(0.6)
-
-        ax.set_xlabel("quality")
-        ax.set_ylabel(feature)
-
-    for i in range(num_features, num_rows * num_cols):
-        r, c = divmod(i, num_cols)
-        axes[r, c].set_visible(False)
-
-
-def plot_feature_vs_quality_scatter(df: pd.DataFrame):
     num_features = len(config.FEATURES)
     num_cols = 3
     num_rows = (num_features + num_cols - 1) // num_cols
@@ -72,7 +36,7 @@ def plot_feature_vs_quality_scatter(df: pd.DataFrame):
         axes[r, c].set_visible(False)
 
 
-def plot_correlation_heatmap(df: pd.DataFrame):
+def plot_correlation(df: pd.DataFrame):
     cols = config.FEATURES + ["quality"]
     corr = pd.DataFrame(df[cols]).corr()
 
@@ -93,7 +57,7 @@ def plot_correlation_heatmap(df: pd.DataFrame):
     fig.colorbar(im, ax=ax)
 
 
-def plot_feature_histograms(df: pd.DataFrame):
+def plot_feature_distribution(df: pd.DataFrame):
     num_features = len(config.FEATURES)
     num_cols = 3
     num_rows = (num_features + num_cols - 1) // num_cols
@@ -141,19 +105,13 @@ def describe_raw_data():
     )
 
     utils.make_plot(
-        title="Feature vs Quality (Scatter)",
-        file_name="feature_vs_quality_scatter",
-        plot=lambda: plot_feature_vs_quality_scatter(df),
-    )
-
-    utils.make_plot(
         title="Raw Data Correlation",
         file_name="raw_data_correlation",
-        plot=lambda: plot_correlation_heatmap(df),
+        plot=lambda: plot_correlation(df),
     )
 
     utils.make_plot(
         title="Feature Distributions",
         file_name="feature_distributions",
-        plot=lambda: plot_feature_histograms(df),
+        plot=lambda: plot_feature_distribution(df),
     )

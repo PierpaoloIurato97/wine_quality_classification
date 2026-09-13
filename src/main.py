@@ -21,7 +21,7 @@ def parse_args():
             "evaluate",
         ],
         required=True,
-        help="Azione da eseguire",
+        help="Action to perform",
     )
     return parser.parse_args()
 

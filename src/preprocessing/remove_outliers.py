@@ -18,8 +18,8 @@ def remove_outliers() -> None:
     rows_after = len(df)
     removed = rows_before - rows_after
 
-    print(f"Righe prima del filtraggio: {rows_before}")
-    print(f"Righe dopo il filtraggio:   {rows_after}")
-    print(f"Righe rimosse:              {removed} ({removed / rows_before * 100:.1f}%)")
+    print(f"Rows before filtering: {rows_before}")
+    print(f"Rows after filtering:  {rows_after}")
+    print(f"Rows removed:          {removed} ({removed / rows_before * 100:.1f}%)")
 
     utils.save_csv(df, "winequality-red-filtered")

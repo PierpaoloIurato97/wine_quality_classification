@@ -65,7 +65,7 @@ def plot_split_class_distribution(
     plt.legend()
 
 
-def plot_correlation_heatmap(df: pd.DataFrame):
+def plot_correlation(df: pd.DataFrame):
     cols = config.FEATURES + [config.LABEL]
     subset: pd.DataFrame = cast(pd.DataFrame, df[cols])
     corr = subset.corr()
@@ -88,44 +88,6 @@ def plot_correlation_heatmap(df: pd.DataFrame):
 
 
 def plot_feature_vs_label(df: pd.DataFrame):
-    num_features = len(config.FEATURES)
-    num_cols = 3
-    num_rows = (num_features + num_cols - 1) // num_cols
-
-    _, axes = plt.subplots(
-        num_rows,
-        num_cols,
-        figsize=(num_cols * 4, num_rows * 3),
-        constrained_layout=True,
-    )
-
-    group_0 = df[df[config.LABEL] == 0]
-    group_1 = df[df[config.LABEL] == 1]
-
-    for i, feature in enumerate(config.FEATURES):
-        r, c = divmod(i, num_cols)
-        ax = axes[r, c]
-
-        bp = ax.boxplot(
-            [group_0[feature], group_1[feature]], labels=["0", "1"], patch_artist=True
-        )
-
-        bp["boxes"][0].set_facecolor("red")
-        bp["boxes"][1].set_facecolor("blue")
-
-        for box in bp["boxes"]:
-            box.set_alpha(0.6)
-
-        ax.set_xlabel(config.LABEL)
-        ax.set_ylabel(feature)
-
-    # Nasconde gli assi vuoti se il numero di feature non riempie la griglia
-    for i in range(num_features, num_rows * num_cols):
-        r, c = divmod(i, num_cols)
-        axes[r, c].set_visible(False)
-
-
-def plot_feature_vs_label_scatter(df: pd.DataFrame):
     num_features = len(config.FEATURES)
     num_cols = 3
     num_rows = (num_features + num_cols - 1) // num_cols
@@ -189,17 +151,11 @@ def describe_processed_data():
     utils.make_plot(
         title="Processed Data Correlation",
         file_name="processed_data_correlation",
-        plot=lambda: plot_correlation_heatmap(df),
+        plot=lambda: plot_correlation(df),
     )
 
     utils.make_plot(
         title="Feature vs Label",
         file_name="feature_vs_label",
         plot=lambda: plot_feature_vs_label(df),
-    )
-
-    utils.make_plot(
-        title="Feature vs Label (Scatter)",
-        file_name="feature_vs_label_scatter",
-        plot=lambda: plot_feature_vs_label_scatter(df),
     )
