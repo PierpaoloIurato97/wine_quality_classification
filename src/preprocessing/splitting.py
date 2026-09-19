@@ -1,43 +1,48 @@
 import numpy as np
 import pandas as pd
+from sklearn.cluster import KMeans
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 
 import config
 import utils
 
 
-def mark_outliers(df: pd.DataFrame) -> pd.Series:
+def cluster_samples(df: pd.DataFrame) -> np.ndarray:
     """
-    Identifies statistical outliers in the dataset using the IQR method.
+    Assigns a cluster ID to every sample using KMeans on standardised features.
 
-    Used as a helper to build a stratification key before splitting, so that
-    the rare outlier samples are distributed proportionally across splits
-    rather than accidentally concentrating in one of them.
+    Standardisation is temporary and internal: it is needed because KMeans
+    relies on Euclidean distance, and the raw features live on very different
+    scales (e.g. total sulfur dioxide ∈ [1, 200] vs density ∈ [0.985, 1.010]).
+    The resulting cluster labels are used only for stratification; the output
+    CSVs still contain the original, non-standardised values.
     """
-    is_outlier = pd.Series(False, index=df.index)
+    X = df[config.FEATURES].to_numpy(dtype=np.float64)
+    X_scaled = StandardScaler().fit_transform(X)
 
-    for feature in config.FEATURES:
-        q1 = df[feature].quantile(0.25)
-        q3 = df[feature].quantile(0.75)
-        iqr = q3 - q1
-        lower = q1 - 1.5 * iqr
-        upper = q3 + 1.5 * iqr
-        is_outlier = is_outlier | (df[feature] < lower) | (df[feature] > upper)
-
-    return is_outlier
+    km = KMeans(
+        n_clusters=config.N_CLUSTERS,
+        random_state=config.RANDOM_STATE,
+        n_init=10,
+    )
+    return km.fit_predict(X_scaled)
 
 
-def build_stratify_key(df: pd.DataFrame) -> np.ndarray:
+def build_stratify_key(df: pd.DataFrame, cluster_ids: np.ndarray) -> np.ndarray:
     """
-    Builds a composite stratification key that combines the class label and
-    outlier status of each sample.
+    Builds a composite stratification key combining the class label and the
+    spatial cluster each sample belongs to.
 
-    Using both dimensions ensures that the train/val/test split preserves not
-    only the class balance but also the proportion of outlier samples, which
-    would otherwise be too rare to appear consistently in all splits.
+    Using both dimensions ensures that train/val/test splits preserve not only
+    the global class balance but also the spatial structure of the data: every
+    dense region (cluster) of the feature space is represented in every split.
     """
-    is_outlier = mark_outliers(df).astype(int)
-    return (df[config.LABEL].astype(str) + "_" + is_outlier.astype(str)).to_numpy()
+    return (
+        df[config.LABEL].astype(str)
+        + "_"
+        + pd.Series(cluster_ids, index=df.index).astype(str)
+    ).to_numpy()
 
 
 def split():
@@ -45,16 +50,18 @@ def split():
     Third preprocessing step in the pipeline.
 
     Splits the labelled dataset into train, validation, and test sets according
-    to the ratios in config. The split is stratified on both the class label
-    and outlier status to guarantee a representative distribution in every
-    split, which is critical for reliable model evaluation.
+    to the ratios in config. The split is stratified on the composite key
+    (label + cluster_id) so that every spatial cluster of the feature space is
+    represented in all three splits, preserving both the class balance and the
+    local data patterns.
     """
     df = utils.read_csv("winequality-red-with-label")
 
-    stratify_key = build_stratify_key(df)
+    cluster_ids = cluster_samples(df)
+    stratify_key = build_stratify_key(df, cluster_ids)
 
     val_test_ratio = config.VALIDATION_RATIO + config.TEST_RATIO
-    train_df, temp_df, _, temp_key = train_test_split(
+    train_df, temp_df, train_key, temp_key = train_test_split(
         df,
         stratify_key,
         test_size=val_test_ratio,
@@ -62,23 +69,25 @@ def split():
         stratify=stratify_key,
     )
 
-    temp_stratify_key = build_stratify_key(temp_df)
     relative_test_ratio = config.TEST_RATIO / val_test_ratio
-    val_df, test_df = train_test_split(
+    val_df, test_df, val_key, test_key = train_test_split(
         temp_df,
+        temp_key,
         test_size=relative_test_ratio,
         random_state=config.RANDOM_STATE,
-        stratify=temp_stratify_key,
+        stratify=temp_key,
     )
 
     train_df = train_df.reset_index(drop=True)
     val_df = val_df.reset_index(drop=True)
     test_df = test_df.reset_index(drop=True)
 
+    # --- Diagnostics ---
+    print(f"Clusters: {config.N_CLUSTERS}")
     print(f"Train: {len(train_df)}, Val: {len(val_df)}, Test: {len(test_df)}")
-    for name, split_df in [("Train", train_df), ("Val", val_df), ("Test", test_df)]:
-        key = build_stratify_key(split_df)
-        unique, counts = np.unique(key, return_counts=True)
+
+    for name, split_key in [("Train", train_key), ("Val", val_key), ("Test", test_key)]:
+        unique, counts = np.unique(split_key, return_counts=True)
         dist = dict(zip(unique, counts))
         print(f"  {name}: {dist}")
 
