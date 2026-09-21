@@ -34,7 +34,7 @@ def build_stratify_key(df: pd.DataFrame, cluster_ids: np.ndarray) -> np.ndarray:
     Builds a composite stratification key combining the class label and the
     spatial cluster each sample belongs to.
 
-    Using both dimensions ensures that train/val/test splits preserve not only
+    Using both dimensions ensures that train/test splits preserve not only
     the global class balance but also the spatial structure of the data: every
     dense region (cluster) of the feature space is represented in every split.
     """
@@ -49,10 +49,10 @@ def split():
     """
     Third preprocessing step in the pipeline.
 
-    Splits the labelled dataset into train, validation, and test sets according
-    to the ratios in config. The split is stratified on the composite key
+    Splits the labelled dataset into train and test sets according to the
+    ratios in config. The split is stratified on the composite key
     (label + cluster_id) so that every spatial cluster of the feature space is
-    represented in all three splits, preserving both the class balance and the
+    represented in both splits, preserving both the class balance and the
     local data patterns.
     """
     df = utils.read_csv("winequality-red-with-label")
@@ -60,37 +60,25 @@ def split():
     cluster_ids = cluster_samples(df)
     stratify_key = build_stratify_key(df, cluster_ids)
 
-    val_test_ratio = config.VALIDATION_RATIO + config.TEST_RATIO
-    train_df, temp_df, train_key, temp_key = train_test_split(
+    train_df, test_df, train_key, test_key = train_test_split(
         df,
         stratify_key,
-        test_size=val_test_ratio,
+        test_size=config.TEST_RATIO,
         random_state=config.RANDOM_STATE,
         stratify=stratify_key,
     )
 
-    relative_test_ratio = config.TEST_RATIO / val_test_ratio
-    val_df, test_df, val_key, test_key = train_test_split(
-        temp_df,
-        temp_key,
-        test_size=relative_test_ratio,
-        random_state=config.RANDOM_STATE,
-        stratify=temp_key,
-    )
-
     train_df = train_df.reset_index(drop=True)
-    val_df = val_df.reset_index(drop=True)
     test_df = test_df.reset_index(drop=True)
 
     # --- Diagnostics ---
     print(f"Clusters: {config.N_CLUSTERS}")
-    print(f"Train: {len(train_df)}, Val: {len(val_df)}, Test: {len(test_df)}")
+    print(f"Train: {len(train_df)}, Test: {len(test_df)}")
 
-    for name, split_key in [("Train", train_key), ("Val", val_key), ("Test", test_key)]:
+    for name, split_key in [("Train", train_key), ("Test", test_key)]:
         unique, counts = np.unique(split_key, return_counts=True)
         dist = dict(zip(unique, counts))
         print(f"  {name}: {dist}")
 
     utils.save_csv(train_df, "winequality-red-train")
-    utils.save_csv(val_df, "winequality-red-validation")
     utils.save_csv(test_df, "winequality-red-test")

@@ -18,16 +18,14 @@ def plot_class_distribution(df: pd.DataFrame):
     plt.hist(df[config.LABEL], bins=2, edgecolor="black")
 
 
-def plot_split_class_distribution(
-    train_df: pd.DataFrame, val_df: pd.DataFrame, test_df: pd.DataFrame
-):
+def plot_split_class_distribution(train_df: pd.DataFrame, test_df: pd.DataFrame):
     """
     Produces a grouped bar chart comparing the class counts in each split.
 
-    Verifies that the stratified split preserved the class ratio across train,
-    validation, and test sets, which is a prerequisite for unbiased evaluation.
+    Verifies that the stratified split preserved the class ratio across train
+    and test sets, which is a prerequisite for unbiased evaluation.
     """
-    datasets = {"Train": train_df, "Validation": val_df, "Test": test_df}
+    datasets = {"Train": train_df, "Test": test_df}
     labels = list(datasets.keys())
     count_0 = [(df[config.LABEL] == 0).sum() for df in datasets.values()]
     count_1 = [(df[config.LABEL] == 1).sum() for df in datasets.values()]
@@ -146,20 +144,73 @@ def plot_feature_vs_label(df: pd.DataFrame):
         axes[r, c].set_visible(False)
 
 
+def plot_split_feature_distributions(train_df: pd.DataFrame, test_df: pd.DataFrame):
+    """
+    Overlays normalised histograms of each feature for train and test sets.
+
+    If the KMeans-stratified split preserved the spatial structure of the data,
+    the two distributions should be nearly identical for every feature. Visible
+    discrepancies would indicate that certain patterns ended up in only one of
+    the two splits.
+    """
+    num_features = len(config.FEATURES)
+    num_cols = 3
+    num_rows = (num_features + num_cols - 1) // num_cols
+
+    _, axes = plt.subplots(
+        num_rows,
+        num_cols,
+        figsize=(num_cols * 4, num_rows * 3),
+        constrained_layout=True,
+    )
+
+    for i, feature in enumerate(config.FEATURES):
+        r, c = divmod(i, num_cols)
+        ax = axes[r, c]
+
+        ax.hist(
+            train_df[feature],
+            bins=30,
+            density=True,
+            alpha=0.5,
+            color="blue",
+            edgecolor="black",
+            linewidth=0.5,
+            label="Train",
+        )
+        ax.hist(
+            test_df[feature],
+            bins=30,
+            density=True,
+            alpha=0.5,
+            color="red",
+            edgecolor="black",
+            linewidth=0.5,
+            label="Test",
+        )
+
+        ax.set_xlabel(feature)
+        ax.set_ylabel("Density")
+        ax.legend(fontsize=7)
+
+    for i in range(num_features, num_rows * num_cols):
+        r, c = divmod(i, num_cols)
+        axes[r, c].set_visible(False)
+
+
 def describe_processed_data():
     """
     Entry point for the processed-data analysis stage of the pipeline.
 
-    Loads all three splits, concatenates them for aggregate statistics, and
+    Loads both splits, concatenates them for aggregate statistics, and
     generates plots that summarise the final preprocessed dataset. Running
     this after the full preprocessing sequence confirms that the data is
     clean and balanced before training begins.
     """
     train_df = utils.read_csv("winequality-red-train")
-    val_df = utils.read_csv("winequality-red-validation")
     test_df = utils.read_csv("winequality-red-test")
 
-    df = pd.concat([train_df, val_df, test_df], ignore_index=True)
+    df = pd.concat([train_df, test_df], ignore_index=True)
 
     utils.ensure_col_exists(df, config.LABEL)
 
@@ -179,7 +230,7 @@ def describe_processed_data():
         xlabel="Dataset",
         ylabel="Count",
         file_name="label_split_distribution",
-        plot=lambda: plot_split_class_distribution(train_df, val_df, test_df),
+        plot=lambda: plot_split_class_distribution(train_df, test_df),
     )
 
     utils.make_plot(
@@ -192,4 +243,10 @@ def describe_processed_data():
         title="Feature vs Label",
         file_name="feature_vs_label",
         plot=lambda: plot_feature_vs_label(df),
+    )
+
+    utils.make_plot(
+        title="Feature Distributions: Train vs Test",
+        file_name="feature_distributions_train_vs_test",
+        plot=lambda: plot_split_feature_distributions(train_df, test_df),
     )
