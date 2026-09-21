@@ -3,8 +3,7 @@ PLOTS_DIR = "plots"
 MODELS_DIR = "models"
 MODEL_VERSION = "0.1.0"
 TRAIN_RATIO = 0.6
-VALIDATION_RATIO = 0.2
-TEST_RATIO = 0.2
+TEST_RATIO = 0.4
 FEATURES = [
     "fixed acidity",
     "volatile acidity",
@@ -21,6 +20,8 @@ FEATURES = [
 LABEL = "label"
 QUALITY_THRESHOLD = 5
 RANDOM_STATE = 42
+C = 1.35
+GAMMA = 0.35
 N_CLUSTERS = 5
 PLAUSIBLE_RANGES = {
     "fixed acidity": (3.0, 16.0),

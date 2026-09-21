@@ -10,7 +10,7 @@ def get_data(split: str) -> tuple[np.ndarray, np.ndarray]:
     Loads the standardized feature matrix and label vector for a given split.
 
     Abstracts file-loading so that evaluate_split can request any split
-    (train / validation / test) by name without knowing the CSV naming scheme.
+    (train / test) by name without knowing the CSV naming scheme.
     """
     df = utils.read_csv(f"winequality-red-{split}-standardized")
     return utils.split_df(df)
@@ -105,12 +105,11 @@ def evaluate():
     """
     Entry point for the evaluation stage of the pipeline.
 
-    Loads the persisted model and runs evaluate_split over train, validation,
-    and test sets. Reporting all three splits together highlights whether the
-    model is overfitting (high train accuracy, low test accuracy) or
-    generalising well.
+    Loads the persisted model and runs evaluate_split over train and test sets.
+    Reporting both splits together highlights whether the model is overfitting
+    (high train accuracy, low test accuracy) or generalising well.
     """
     model = utils.load_model("wine_quality_model")
 
-    for split in ["train", "validation", "test"]:
+    for split in ["train", "test"]:
         evaluate_split(model, split)
