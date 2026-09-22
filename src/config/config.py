@@ -20,9 +20,10 @@ FEATURES = [
 LABEL = "label"
 QUALITY_THRESHOLD = 5
 RANDOM_STATE = 42
-C = 1.35
-GAMMA = 0.35
 N_CLUSTERS = 5
+OPTUNA_N_ITER = 100
+OPTUNA_C_BOUNDS = (1e-1, 1e1)
+OPTUNA_GAMMA_BOUNDS = (1e-1, 1e1)
 PLAUSIBLE_RANGES = {
     "fixed acidity": (3.0, 16.0),
     "volatile acidity": (0.0, 1.2),

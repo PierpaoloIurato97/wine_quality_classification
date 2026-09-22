@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.metrics import roc_auc_score, roc_curve
 
 import utils
 from model import WineQualityClassifier
@@ -63,22 +64,38 @@ def plot_confusion_matrix(
             plt.text(j, i, str(cm[i][j]), horizontalalignment="center", color="black")
 
 
-def print_accuracy(split: str, accuracy: float) -> None:
+def plot_roc_curve(
+    fpr: np.ndarray, tpr: np.ndarray, auc: float, title: str = "ROC Curve"
+) -> None:
     """
-    Prints a formatted accuracy line for a given split.
+    Renders and saves a visual ROC Curve.
 
-    Centralises the output format so that train, validation, and test
-    accuracy lines look consistent in the pipeline's console output.
+    Shows the trade-off between True Positive Rate and False Positive Rate
+    at various threshold settings.
     """
-    print(f"{split} Accuracy: {accuracy * 100:.2f}%")
+    plt.title(title)
+    plt.plot(fpr, tpr, color="darkorange", lw=2, label=f"ROC curve (area = {auc:.4f})")
+    plt.plot([0, 1], [0, 1], color="navy", lw=2, linestyle="--")
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.legend(loc="lower right")
+
+
+def print_metrics(split: str, accuracy: float, auc: float) -> None:
+    """
+    Prints formatted metrics (accuracy and AUC) for a given split.
+    """
+    print(f"{split} - Accuracy: {accuracy * 100:.2f}% | AUC: {auc * 100:.2f}%")
 
 
 def evaluate_split(model: WineQualityClassifier, split: str) -> None:
     """
     Evaluates the trained model on a single data split.
 
-    Combines accuracy reporting and confusion-matrix plotting into one call
-    so that evaluate() can iterate over all splits uniformly.
+    Combines accuracy and AUC reporting alongside confusion-matrix and ROC-curve
+    plotting into one call so that evaluate() can iterate over all splits uniformly.
     """
     X, y = get_data(split)
 
@@ -86,19 +103,32 @@ def evaluate_split(model: WineQualityClassifier, split: str) -> None:
     num_correct = int((pred == y).sum())
 
     accuracy = utils.calculate_accuracy(num_correct, X.shape[0])
+
+    scores = model.decision_function(X)
+    auc = roc_auc_score(y, scores)
+    fpr, tpr, _ = roc_curve(y, scores)
+
     true_positives, true_negatives, false_positives, false_negatives = (
         calculate_confusion_matrix(pred, y)
     )
 
-    title = f"Confusion Matrix - {split.capitalize()}"
+    title_cm = f"Confusion Matrix - {split.capitalize()}"
     utils.make_plot(
-        title=title,
+        title=title_cm,
         file_name=f"confusion_matrix_{split}",
         plot=lambda: plot_confusion_matrix(
-            true_positives, true_negatives, false_positives, false_negatives, title
+            true_positives, true_negatives, false_positives, false_negatives, title_cm
         ),
     )
-    print_accuracy(split.capitalize(), accuracy)
+
+    title_roc = f"ROC Curve - {split.capitalize()}"
+    utils.make_plot(
+        title=title_roc,
+        file_name=f"roc_curve_{split}",
+        plot=lambda: plot_roc_curve(fpr, tpr, auc, title_roc),
+    )
+
+    print_metrics(split.capitalize(), accuracy, auc)
 
 
 def evaluate():
@@ -107,7 +137,7 @@ def evaluate():
 
     Loads the persisted model and runs evaluate_split over train and test sets.
     Reporting both splits together highlights whether the model is overfitting
-    (high train accuracy, low test accuracy) or generalising well.
+    (high train metrics, low test metrics) or generalising well.
     """
     model = utils.load_model("wine_quality_model")
 

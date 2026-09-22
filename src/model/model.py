@@ -41,3 +41,12 @@ class WineQualityClassifier:
         if self.model is None:
             raise RuntimeError("Model has not been trained yet.")
         return self.model.predict(X)
+
+    def decision_function(self, X: np.ndarray) -> np.ndarray:
+        """
+        Returns decision function scores (distance to the hyperplane) for the samples.
+        Useful for calculating ranking metrics like ROC AUC.
+        """
+        if self.model is None:
+            raise RuntimeError("Model has not been trained yet.")
+        return self.model.decision_function(X)
